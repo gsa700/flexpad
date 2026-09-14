@@ -17,7 +17,7 @@ A FlexControl USB knob, if present, tunes the active slice; its buttons map to
 built-in actions or to your own buttons (Knob... in the toolbar). That needs
 pyserial; everything else is standard library.
 
-Standard library only. Buttons live in config.json in your settings folder
+Buttons live in config.json in your settings folder
 (%APPDATA%\flexpad on Windows; Setup... shows the path); edit them in the app
 (right-click a button) or in the file, then Reload.
 """
@@ -68,7 +68,7 @@ DISCOVERY_PORT = 4992
 COMMAND_TIMEOUT = 5.0
 RECONNECT_SECONDS = 5.0
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 log = logging.getLogger("flexpad")
 
@@ -190,6 +190,7 @@ class FlexClient(threading.Thread):
         self.version = None
         self.handle = None
         self.slices = {}          # index -> merged attribute dict
+        self.transmit = {}        # merged 'transmit' status (rfpower, tunepower, ...)
         self._seq = 0
         self._pending = {}        # seq -> (Event, holder list)
         self._lock = threading.Lock()
@@ -252,6 +253,7 @@ class FlexClient(threading.Thread):
         self.on_state()
         buf = b""
         self.send("sub slice all", wait=False)
+        self.send("sub tx all", wait=False)
         while not self._stop.is_set() and self.sock is sock:
             try:
                 chunk = sock.recv(8192)
@@ -292,6 +294,8 @@ class FlexClient(threading.Thread):
                 # Incremental - a retune sends RF_frequency alone, so merge.
                 self.slices.setdefault(idx, {}).update(parse_kv(attrs))
                 self.on_state()
+            elif body.startswith("transmit "):
+                self.transmit.update(parse_kv(body[len("transmit "):]))
         elif kind == "V":
             self.version = line[1:]
             self.on_traffic("<", line)
@@ -566,6 +570,52 @@ def knob_config(cfg):
 
 def format_mhz(hz):
     return f"{hz / 1_000_000:.6f}"
+
+
+# ---------------------------------------------------------------- capture ---
+
+def capture_slice(client, full=False):
+    """Command lines that recreate the active slice's current setup.
+
+    Basic: frequency, mode, antennas, filter - the memory-channel essentials.
+    Full adds tuning step, AGC, noise tools, RF gain, DAX and TX power.
+    Returns (label_suggestion, lines) or raises SequenceError.
+    """
+    idx = client.active_slice()
+    if idx is None:
+        raise SequenceError("no active slice to capture")
+    s = client.slices[idx]
+    g = s.get
+    freq = g("RF_frequency", "?")
+    mode = g("mode", "?")
+    lines = [
+        f"# captured from slice {g('index_letter', '?')} on {time.strftime('%Y-%m-%d %H:%M')}",
+        f"slice tune {{slice}} {freq}",
+        f"slice set {{slice}} mode={mode}",
+        f"slice set {{slice}} rxant={g('rxant', 'ANT1')} txant={g('txant', 'ANT1')}",
+        f"filt {{slice}} {g('filter_lo', '100')} {g('filter_hi', '2900')}",
+    ]
+    if full:
+        lines += [
+            f"slice set {{slice}} step={g('step', '100')}",
+            f"slice set {{slice}} agc_mode={g('agc_mode', 'med')} agc_threshold={g('agc_threshold', '60')}",
+            f"slice set {{slice}} nr={g('nr', '0')} nr_level={g('nr_level', '50')}",
+            f"slice set {{slice}} nb={g('nb', '0')} nb_level={g('nb_level', '50')}",
+            f"slice set {{slice}} wnb={g('wnb', '0')} wnb_level={g('wnb_level', '50')}",
+            f"slice set {{slice}} anf={g('anf', '0')}",
+            f"slice set {{slice}} rfgain={g('rfgain', '0')}",
+            f"slice set {{slice}} dax={g('dax', '0')}",
+        ]
+        tx = client.transmit
+        if "rfpower" in tx:
+            lines.append(f"transmit set rfpower={tx['rfpower']}")
+        if "tunepower" in tx:
+            lines.append(f"transmit set tunepower={tx['tunepower']}")
+    try:
+        label = f"{float(freq):.3f} {mode}"
+    except ValueError:
+        label = mode
+    return label, lines
 
 
 # -------------------------------------------------------------- reference ---
@@ -1094,7 +1144,7 @@ class App:
         ttk.Button(row3, text="Reference", command=self.show_reference).pack(side="right")
         insert = ttk.Menubutton(row3, text="Insert example")
         insert.pack(side="right", padx=(0, 4))
-        text = tk.Text(frm, width=60, height=12, font=self.mono, undo=True)
+        text = tk.Text(frm, width=76, height=12, font=self.mono, undo=True)
         text.grid(row=4, column=0, columnspan=2, sticky="nsew")
         frm.rowconfigure(4, weight=1)
         text.insert("1.0", "\n".join(b.get("commands", [])))
@@ -1112,6 +1162,28 @@ class App:
         for name, lines in EXAMPLES:
             menu.add_command(label=name, command=lambda l=lines: insert_lines(l))
         insert.configure(menu=menu)
+
+        # Capture: set the radio up the way you want it, then take a snapshot
+        # of the active slice as commands. This is what a memory channel
+        # would store, plus the antennas SmartSDR's memories leave out.
+        capture = ttk.Menubutton(row3, text="Capture slice")
+        capture.pack(side="right", padx=(0, 4))
+
+        def do_capture(full):
+            try:
+                suggested, lines = capture_slice(self.client, full=full)
+            except SequenceError as err:
+                self.log_line("E", str(err))
+                return
+            insert_lines(lines)
+            if label_var.get().strip() in ("", "New"):
+                label_var.set(suggested)
+        cmenu = tk.Menu(capture, tearoff=0)
+        cmenu.add_command(label="Basic: frequency, mode, antennas, filter",
+                          command=lambda: do_capture(False))
+        cmenu.add_command(label="Full: basic + step, AGC, NR/NB/ANF, RF gain, DAX, TX power",
+                          command=lambda: do_capture(True))
+        capture.configure(menu=cmenu)
         hint = ("{slice} = active slice   {tx} = transmit slice   {A}..{H} = slice by letter\n"
                 "wait 0.5 pauses   # starts a comment   hotkey: F1, ctrl+1, alt+shift+x")
         ttk.Label(frm, text=hint, foreground="#6c757d").grid(row=5, column=0, columnspan=2,

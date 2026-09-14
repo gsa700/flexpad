@@ -68,7 +68,16 @@ Right-click a button for Edit, Duplicate, Move and Delete. **+ Button** adds
 one. Everything lands in `config.json`, which you can also edit by hand; press
 **Reload** afterwards.
 
-The editor has an **Insert example** menu that drops a ready-made snippet into
+The quickest way to make a button is to set the radio up the way you want it,
+then use **Capture slice** in the editor. It reads the active slice and writes
+the commands that recreate it. *Basic* captures frequency, mode, both antenna
+ports and the filter, which is what a memory channel stores plus the antennas
+SmartSDR's memories leave out. *Full* adds tuning step, AGC, noise reduction,
+noise blanker, wideband blanker, auto notch, RF gain, DAX channel and TX
+power. A new button gets a label like `14.250 USB` unless you have typed one.
+Everything captured is an ordinary command line you can edit or delete.
+
+The editor also has an **Insert example** menu that drops a ready-made snippet into
 the command list (tune plus mode plus antenna plus filter, antenna only, open
 a second slice, move TX, load a profile, and so on). **Reference** opens a
 one-page cheat sheet of the commands that matter for this job, shows the
