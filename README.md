@@ -31,7 +31,8 @@ TX to a slice, load a profile, key an amplifier control, and so on.
 
 ## Setup
 
-Requires Python 3.9 or newer. Standard library only, nothing to `pip install`.
+Requires Python 3.9 or newer. Standard library only, except pyserial for the
+optional FlexControl knob, which the installer adds.
 
 Windows:
 
@@ -103,6 +104,42 @@ flexpad window has focus. Colors are any Tk color: `#2d6a4f`, `darkred`.
 The command line at the bottom sends one command by hand, with the same
 placeholders and an up/down history. Tick *status traffic* to also see the
 radio's `S` status stream, which is noisy but is exactly what SmartSDR sees.
+
+## FlexControl knob
+
+If a FlexRadio FlexControl USB knob is plugged in, flexpad drives it, which
+matters when you operate from the radio's front panel and SmartSDR isn't
+running to own the knob. It needs pyserial, which the installer adds; without
+it the knob is simply off.
+
+- Turning the knob tunes the active slice by its current tuning step, the
+  same step SmartSDR and the front panel use. Fast spins are honored: the
+  knob reports how many ticks passed, and flexpad multiplies.
+- The knob button and the three aux buttons each have short press, hold,
+  and double-click events. **Knob...** in the toolbar maps each one to a
+  built-in action or to any of your flexpad buttons by label.
+
+Built-in actions:
+
+| action | does |
+|---|---|
+| `@step` | cycle the tuning step through the list in Knob... (default 10, 100, 1000, 10000 Hz) |
+| `@next-slice` | move the active flag to the next open slice |
+| `@mute` | toggle audio mute on the active slice |
+| `@tx` | make the active slice the transmit slice |
+
+Defaults: knob press cycles the step, hold moves to the next slice, double
+click mutes. The aux buttons start unbound; an unbound press shows in the log
+so you can see which is which. If clockwise tunes down on your unit, tick
+*Invert direction*.
+
+The knob is found by its USB id, so other serial devices are never opened by
+mistake. Only one program can hold it: when SmartSDR is running it takes the
+knob, and flexpad shows `knob COMx busy` until SmartSDR closes. The status
+line shows the port in use, the tuning step, and the active slice frequency.
+
+`python flexpad.py --knob` prints raw knob events without touching the radio,
+handy for checking direction and learning the button codes.
 
 ## Command line
 

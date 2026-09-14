@@ -1,0 +1,2 @@
+# Optional: FlexControl USB knob support. Everything else is standard library.
+pyserial>=3.5

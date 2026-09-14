@@ -11,9 +11,14 @@ underneath. It talks to the radio directly, so nothing else has to be running.
     python flexpad.py --discover      list radios announcing on the LAN
     python flexpad.py --send "ant list"       one command, print the reply
     python flexpad.py --run "2m USB"          fire a button headless
+    python flexpad.py --knob                  print FlexControl knob events
+
+A FlexControl USB knob, if present, tunes the active slice; its buttons map to
+built-in actions or to your own buttons (Knob... in the toolbar). That needs
+pyserial; everything else is standard library.
 
 Standard library only. Buttons live in config.json in your settings folder
-(%APPDATA%lexpad on Windows; Setup... shows the path); edit them in the app
+(%APPDATA%\flexpad on Windows; Setup... shows the path); edit them in the app
 (right-click a button) or in the file, then Reload.
 """
 
@@ -63,7 +68,7 @@ DISCOVERY_PORT = 4992
 COMMAND_TIMEOUT = 5.0
 RECONNECT_SECONDS = 5.0
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 log = logging.getLogger("flexpad")
 
@@ -87,6 +92,7 @@ def load_config():
     for b in cfg["buttons"]:
         b.setdefault("label", "?")
         b.setdefault("commands", [])
+    knob_config(cfg)
     return cfg
 
 
@@ -409,6 +415,159 @@ def run_sequence(client, commands, stop_on_error=True, report=None):
     return ok
 
 
+# ------------------------------------------------------------ flexcontrol ---
+#
+# The FlexControl is a USB serial device (9600 8N1) speaking a tiny CAT-style
+# protocol: semicolon-terminated tokens, no line endings. U/D are knob ticks
+# (U03 means three ticks arrived in one USB poll), S/L/C are short, long and
+# double presses of the knob, X1S..X3L the same for the three aux buttons.
+# It sends F0304; when a host opens it.
+
+FLEXCONTROL_VID, FLEXCONTROL_PID = 0x2192, 0x0010
+KNOB_EVENTS = ["S", "L", "C",
+               "X1S", "X1L", "X1C", "X2S", "X2L", "X2C", "X3S", "X3L", "X3C"]
+KNOB_EVENT_NAMES = {
+    "S": "knob short press", "L": "knob long press", "C": "knob double click",
+    "X1S": "AUX1 press", "X1L": "AUX1 hold", "X1C": "AUX1 double",
+    "X2S": "AUX2 press", "X2L": "AUX2 hold", "X2C": "AUX2 double",
+    "X3S": "AUX3 press", "X3L": "AUX3 hold", "X3C": "AUX3 double",
+}
+# Built-in actions a knob event can map to; anything else is a button label.
+KNOB_ACTIONS = ["@step", "@next-slice", "@mute", "@tx"]
+DEFAULT_FLEXCONTROL = {
+    "enabled": True,
+    "port": "",                  # blank = find it by USB id
+    "invert": False,             # flip if clockwise tunes down on your unit
+    "steps": [10, 100, 1000, 10000],
+    "bindings": {"S": "@step", "L": "@next-slice", "C": "@mute",
+                 "X1S": "", "X1L": "", "X1C": "", "X2S": "", "X2L": "", "X2C": "",
+                 "X3S": "", "X3L": "", "X3C": ""},
+}
+KNOB_TOKEN = re.compile(r"([UD])(\d*)")
+
+
+def find_flexcontrol():
+    """COM port of the first FlexControl on the system, or None."""
+    try:
+        from serial.tools import list_ports
+    except ImportError:
+        return None
+    for p in list_ports.comports():
+        if p.vid == FLEXCONTROL_VID and p.pid == FLEXCONTROL_PID:
+            return p.device
+    return None
+
+
+class FlexControl(threading.Thread):
+    """Reads the knob and reports turns and presses; reconnects on its own.
+
+    on_turn(delta) gets the net ticks read in one pass, positive for U.
+    on_button(code) gets one of KNOB_EVENTS. on_status(text) reports the
+    port state for the status bar. All three run on this thread.
+    """
+
+    def __init__(self, port="", invert=False, on_turn=None, on_button=None, on_status=None):
+        super().__init__(name="flexcontrol", daemon=True)
+        self.port = port
+        self.invert = invert
+        self.on_turn = on_turn or (lambda d: None)
+        self.on_button = on_button or (lambda c: None)
+        self.on_status = on_status or (lambda t: None)
+        self.ser = None
+        self._stop = threading.Event()
+
+    def stop(self):
+        self._stop.set()
+        ser, self.ser = self.ser, None
+        if ser:
+            try:
+                ser.close()
+            except Exception:
+                pass
+
+    def run(self):
+        try:
+            import serial
+        except ImportError:
+            self.on_status("pyserial not installed")
+            return
+        while not self._stop.is_set():
+            port = self.port or find_flexcontrol()
+            if not port:
+                self.on_status("not found")
+                self._stop.wait(5)
+                continue
+            try:
+                self.ser = serial.Serial(port, 9600, timeout=0.2)
+            except serial.SerialException as err:
+                busy = "Access is denied" in str(err) or "PermissionError" in str(err)
+                self.on_status(f"{port} busy" if busy else f"{port}: {err}")
+                self._stop.wait(5)
+                continue
+            self.on_status(port)
+            try:
+                self._read_loop(self.ser)
+            except serial.SerialException as err:
+                if self._stop.is_set():
+                    break
+                self.on_status(f"{port} lost")
+                log.warning("FlexControl read failed: %s", err)
+            finally:
+                ser, self.ser = self.ser, None
+                if ser:
+                    try:
+                        ser.close()
+                    except Exception:
+                        pass
+            self._stop.wait(3)
+
+    def _read_loop(self, ser):
+        buf = b""
+        while not self._stop.is_set() and self.ser is ser:
+            chunk = ser.read(1)
+            if not chunk:
+                continue
+            waiting = ser.in_waiting
+            if waiting:
+                chunk += ser.read(waiting)
+            buf += chunk
+            if b";" not in buf:
+                continue
+            *tokens, buf = buf.split(b";")
+            delta = 0
+            for raw in tokens:
+                tok = raw.decode("ascii", "ignore").strip()
+                if not tok or tok.startswith("F"):
+                    continue                     # F0304 is the hello on open
+                m = KNOB_TOKEN.fullmatch(tok)
+                if m:
+                    n = int(m.group(2) or 1)
+                    delta += n if m.group(1) == "U" else -n
+                elif tok in KNOB_EVENT_NAMES:
+                    self.on_button(tok)
+                else:
+                    log.info("FlexControl sent unknown token %r", tok)
+            if delta:
+                self.on_turn(-delta if self.invert else delta)
+
+
+def knob_config(cfg):
+    """The flexcontrol section with every key present."""
+    fc = cfg.setdefault("flexcontrol", {})
+    for k, v in DEFAULT_FLEXCONTROL.items():
+        if k == "bindings":
+            b = fc.setdefault("bindings", {})
+            for code in KNOB_EVENTS:
+                b.setdefault(code, v.get(code, ""))
+        else:
+            fc.setdefault(k, v)
+    return fc
+
+
+def format_mhz(hz):
+    return f"{hz / 1_000_000:.6f}"
+
+
 # -------------------------------------------------------------- reference ---
 
 REFERENCE_URL = "https://github.com/flexradio/smartsdr-api-docs/wiki"
@@ -553,6 +712,7 @@ class App:
         self.status_var = tk.StringVar(value="connecting...")
         ttk.Label(top, textvariable=self.status_var).pack(side="left")
         ttk.Button(top, text="Setup...", command=self.edit_setup).pack(side="right")
+        ttk.Button(top, text="Knob...", command=self.edit_knob).pack(side="right", padx=(0, 4))
         ttk.Button(top, text="Reference", command=self.show_reference).pack(side="right", padx=(0, 4))
         ttk.Button(top, text="Reload", command=self.reload).pack(side="right", padx=(0, 4))
         ttk.Button(top, text="+ Button", command=self.add_button).pack(side="right", padx=(0, 4))
@@ -577,6 +737,7 @@ class App:
         self.logbox.tag_configure("S", foreground="#6c757d")
         self.logbox.tag_configure("!", foreground="#ffb347")
         self.logbox.tag_configure("E", foreground="#ff6b6b")
+        self.logbox.tag_configure("K", foreground="#c9a0ff")
 
         bottom = ttk.Frame(root, padding=(8, 4))
         bottom.pack(fill="x")
@@ -593,6 +754,9 @@ class App:
 
         self.build_grid()
         self.client = self.new_client()
+        self.knob = None
+        self.knob_state = "off"
+        self.start_knob()
         root.after(100, self.pump)
 
     def apply_icon(self, root):
@@ -615,6 +779,156 @@ class App:
                             on_state=lambda: self.events.put(("state",)))
         client.start()
         return client
+
+    # -- FlexControl knob --
+
+    def start_knob(self):
+        if self.knob:
+            self.knob.stop()
+            self.knob = None
+        fc = knob_config(self.cfg)
+        if not fc["enabled"]:
+            self.knob_state = "off"
+            self.events.put(("state",))
+            return
+        self.knob = FlexControl(fc["port"], fc["invert"],
+                                on_turn=self.knob_turn, on_button=self.knob_button,
+                                on_status=lambda t: self.events.put(("knob", t)))
+        self.knob.start()
+
+    def knob_turn(self, delta):
+        """Runs on the knob thread: retune the active slice by delta steps."""
+        c = self.client
+        idx = c.active_slice()
+        if idx is None or not c.connected:
+            return
+        s = c.slices[idx]
+        try:
+            hz = round(float(s["RF_frequency"]) * 1_000_000)
+            step = int(float(s.get("step", 100)))
+        except (KeyError, ValueError):
+            return
+        new = max(0, hz + delta * step)
+        # Update the cache now so the next burst of ticks builds on this one
+        # instead of on a status echo that may not have arrived yet.
+        s["RF_frequency"] = format_mhz(new)
+        try:
+            code, text = c.send(f"slice tune {idx} {format_mhz(new)}")
+        except NotConnected:
+            return
+        if code != 0:
+            self.events.put(("traffic", "E", f"knob tune refused: {text}"))
+        else:
+            self.events.put(("traffic", "K", f"knob {delta:+d} x {step} Hz -> {format_mhz(new)}"))
+
+    def knob_button(self, code):
+        """Runs on the knob thread: dispatch a press to its binding."""
+        name = KNOB_EVENT_NAMES.get(code, code)
+        binding = knob_config(self.cfg)["bindings"].get(code, "").strip()
+        if not binding:
+            self.events.put(("traffic", "K", f"{name}: not bound (Knob... to assign)"))
+            return
+        if binding.startswith("@"):
+            self.events.put(("traffic", "!", f"{name}: {binding}"))
+            try:
+                self.knob_action(binding)
+            except NotConnected as err:
+                self.events.put(("traffic", "E", str(err)))
+            return
+        for i, b in enumerate(self.cfg["buttons"]):
+            if b["label"] == binding:
+                self.events.put(("fire", i))
+                return
+        self.events.put(("traffic", "E", f"{name}: no button labeled '{binding}'"))
+
+    def knob_action(self, action):
+        c = self.client
+        idx = c.active_slice()
+        if idx is None:
+            raise NotConnected("no active slice")
+        s = c.slices[idx]
+        if action == "@step":
+            steps = [int(x) for x in knob_config(self.cfg)["steps"]] or [100]
+            cur = int(float(s.get("step", 0)))
+            nxt = next((x for x in steps if x > cur), steps[0])
+            c.send(f"slice set {idx} step={nxt}")
+            s["step"] = str(nxt)
+            self.events.put(("traffic", "!", f"tuning step {nxt} Hz"))
+        elif action == "@next-slice":
+            live = sorted(c.live_slices(), key=int)
+            if len(live) < 2:
+                self.events.put(("traffic", "K", "only one slice open"))
+                return
+            nxt = live[(live.index(idx) + 1) % len(live)]
+            c.send(f"slice set {nxt} active=1")
+        elif action == "@mute":
+            c.send(f"slice set {idx} audio_mute={0 if s.get('audio_mute') == '1' else 1}")
+        elif action == "@tx":
+            c.send(f"slice set {idx} tx=1")
+        else:
+            self.events.put(("traffic", "E", f"unknown knob action {action}"))
+
+    def edit_knob(self):
+        tk, ttk = self.tk, self.ttk
+        fc = knob_config(self.cfg)
+        win = tk.Toplevel(self.root)
+        win.title("FlexControl knob")
+        win.transient(self.root)
+        win.grab_set()
+        frm = ttk.Frame(win, padding=10)
+        frm.pack(fill="both", expand=True)
+        frm.columnconfigure(1, weight=1)
+
+        en_var = tk.BooleanVar(value=bool(fc["enabled"]))
+        port_var = tk.StringVar(value=fc["port"])
+        inv_var = tk.BooleanVar(value=bool(fc["invert"]))
+        steps_var = tk.StringVar(value=", ".join(str(x) for x in fc["steps"]))
+        found = find_flexcontrol()
+        ttk.Checkbutton(frm, text="Use the FlexControl knob", variable=en_var).grid(
+            row=0, column=0, columnspan=2, sticky="w", pady=(0, 6))
+        ttk.Label(frm, text="Port (blank = find by USB id)").grid(row=1, column=0, sticky="w", pady=2, padx=(0, 8))
+        ttk.Entry(frm, textvariable=port_var).grid(row=1, column=1, sticky="ew", pady=2)
+        ttk.Label(frm, text=f"detected: {found or 'none'}", foreground="#6c757d").grid(
+            row=1, column=2, sticky="w", padx=(6, 0))
+        ttk.Checkbutton(frm, text="Invert direction", variable=inv_var).grid(
+            row=2, column=0, columnspan=2, sticky="w", pady=2)
+        ttk.Label(frm, text="Step sizes for @step, Hz").grid(row=3, column=0, sticky="w", pady=2, padx=(0, 8))
+        ttk.Entry(frm, textvariable=steps_var).grid(row=3, column=1, sticky="ew", pady=2)
+
+        ttk.Label(frm, text="Buttons: pick a built-in action or one of your flexpad buttons").grid(
+            row=4, column=0, columnspan=3, sticky="w", pady=(10, 4))
+        choices = [""] + KNOB_ACTIONS + [b["label"] for b in self.cfg["buttons"]]
+        bind_vars = {}
+        for n, code in enumerate(KNOB_EVENTS):
+            r = 5 + n
+            ttk.Label(frm, text=KNOB_EVENT_NAMES[code]).grid(row=r, column=0, sticky="w", padx=(0, 8))
+            v = tk.StringVar(value=fc["bindings"].get(code, ""))
+            bind_vars[code] = v
+            ttk.Combobox(frm, textvariable=v, values=choices).grid(row=r, column=1, columnspan=2,
+                                                                   sticky="ew", pady=1)
+        hint = ("@step cycles the tuning step   @next-slice moves the active flag   "
+                "@mute toggles audio   @tx makes the active slice transmit")
+        ttk.Label(frm, text=hint, foreground="#6c757d").grid(row=5 + len(KNOB_EVENTS), column=0,
+                                                             columnspan=3, sticky="w", pady=(8, 8))
+
+        def save():
+            fc["enabled"] = en_var.get()
+            fc["port"] = port_var.get().strip()
+            fc["invert"] = inv_var.get()
+            try:
+                fc["steps"] = [int(x) for x in steps_var.get().replace(",", " ").split()] or [100]
+            except ValueError:
+                fc["steps"] = [10, 100, 1000, 10000]
+            fc["bindings"] = {code: v.get().strip() for code, v in bind_vars.items()}
+            win.destroy()
+            save_config(self.cfg)
+            self.start_knob()
+            self.log_line("!", "knob settings saved")
+        btns = ttk.Frame(frm)
+        btns.grid(row=6 + len(KNOB_EVENTS), column=0, columnspan=3, sticky="e")
+        ttk.Button(btns, text="Cancel", command=win.destroy).pack(side="right")
+        ttk.Button(btns, text="Save", command=save).pack(side="right", padx=(0, 6))
+        self.place_over(win)
 
     # -- grid --
 
@@ -940,6 +1254,7 @@ class App:
         if target != (self.client.host, self.client.port) or not self.client.connected:
             self.client.stop()
             self.client = self.new_client()
+        self.start_knob()
         self.log_line("!", "config reloaded")
 
     # -- manual command line --
@@ -975,11 +1290,17 @@ class App:
                 ev = self.events.get_nowait()
                 if ev[0] == "traffic":
                     _, d, t = ev
-                    if d == "S" and not self.show_status.get():
+                    if d in ("S", "K") and not self.show_status.get():
                         continue
                     self.log_line(d, t)
                 elif ev[0] == "state":
                     self.refresh_status()
+                elif ev[0] == "knob":
+                    self.knob_state = ev[1]
+                    self.log_line("!", f"knob: {ev[1]}")
+                    self.refresh_status()
+                elif ev[0] == "fire":
+                    self.fire(ev[1])
         except queue.Empty:
             pass
         self.root.after(100, self.pump)
@@ -997,7 +1318,8 @@ class App:
         self.status_var.set(
             f"{c.host}  slice {s.get('index_letter', '?')}  "
             f"{s.get('RF_frequency', '?')} MHz  {s.get('mode', '?')}  "
-            f"rx {s.get('rxant', '?')}  tx {s.get('txant', '?')}")
+            f"rx {s.get('rxant', '?')}  tx {s.get('txant', '?')}  "
+            f"step {s.get('step', '?')}  knob {self.knob_state}")
 
     def log_line(self, tag, text):
         self.logbox.configure(state="normal")
@@ -1013,6 +1335,8 @@ class App:
 
     def on_close(self):
         save_ui_state(geometry=self.root.geometry())
+        if self.knob:
+            self.knob.stop()
         self.client.stop()
         self.root.destroy()
 
@@ -1060,8 +1384,26 @@ def main():
     ap.add_argument("--send", metavar="CMD", help="send one API command and print the reply")
     ap.add_argument("--run", metavar="LABEL", help="fire the button with this label, headless")
     ap.add_argument("--quiet", action="store_true", help="with --run: print only errors")
+    ap.add_argument("--knob", action="store_true",
+                    help="print FlexControl events without touching the radio (Ctrl+C to stop)")
     args = ap.parse_args()
-    setup_logging(to_console=bool(args.discover or args.send or args.run))
+    setup_logging(to_console=bool(args.discover or args.send or args.run or args.knob))
+
+    if args.knob:
+        fc = knob_config(load_config())
+        print(f"FlexControl: {fc['port'] or find_flexcontrol() or 'not found'}  (Ctrl+C to stop)")
+        knob = FlexControl(fc["port"], fc["invert"],
+                           on_turn=lambda d: print(f"turn {d:+d}"),
+                           on_button=lambda c: print(f"button {c}  ({KNOB_EVENT_NAMES[c]})"),
+                           on_status=lambda t: print(f"status: {t}"))
+        knob.start()
+        try:
+            while knob.is_alive():
+                time.sleep(0.2)
+        except KeyboardInterrupt:
+            pass
+        knob.stop()
+        return
 
     if args.discover:
         radios = discover()

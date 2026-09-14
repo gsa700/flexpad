@@ -31,7 +31,7 @@ $DataDir    = Join-Path $env:APPDATA 'flexpad'
 $MinPython  = [version]'3.9'
 $Shortcut   = Join-Path ([Environment]::GetFolderPath('Programs')) 'flexpad.lnk'
 $Files      = @('flexpad.py', 'config.example.json', 'README.md', 'LICENSE', 'uninstall.ps1',
-                'assets\flexpad.ico', 'assets\flexpad.png')
+                'requirements.txt', 'assets\flexpad.ico', 'assets\flexpad.png')
 
 function Say([string]$m) { Write-Host "  $m" }
 function Fail([string]$m) { Write-Host "ERROR: $m" -ForegroundColor Red; exit 1 }
@@ -61,6 +61,13 @@ if ($LASTEXITCODE -ne 0) { Fail "tkinter is missing. Re-run the Python installer
 $pythonw = Join-Path (Split-Path $python -Parent) 'pythonw.exe'
 if (-not (Test-Path $pythonw)) { Fail "pythonw.exe not found beside python.exe. A windowed launcher is required." }
 Say "Windowed launcher: pythonw.exe"
+
+# --- Optional: pyserial for the FlexControl knob -----------------------------
+# Not fatal if it fails: flexpad runs without it, the knob is just off.
+& $python -m pip install --quiet --disable-pip-version-check -r (Join-Path $Root 'requirements.txt') 2>$null
+& $python -c "import serial" 2>$null
+if ($LASTEXITCODE -eq 0) { Say "pyserial OK (FlexControl knob support)" }
+else { Say "pyserial not installed - FlexControl knob support off (python -m pip install pyserial to add it)" }
 
 # --- Stop a running copy so the program files can be replaced ---------------
 Get-CimInstance Win32_Process -Filter "Name = 'pythonw.exe' OR Name = 'python.exe'" |
