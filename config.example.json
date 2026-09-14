@@ -1,0 +1,66 @@
+{
+  "flex_host": "",
+  "flex_port": 4992,
+  "columns": 4,
+  "stop_on_error": true,
+  "buttons": [
+    {
+      "label": "2m USB",
+      "key": "F1",
+      "color": "#2d6a4f",
+      "commands": [
+        "# 2 m transverter on XVTA. The XVTR band must already be defined in SmartSDR.",
+        "slice tune {slice} 144.200",
+        "slice set {slice} mode=USB",
+        "slice set {slice} rxant=XVTA txant=XVTA",
+        "filt {slice} 150 2900"
+      ]
+    },
+    {
+      "label": "70cm USB",
+      "key": "F2",
+      "color": "#2d6a4f",
+      "commands": [
+        "slice tune {slice} 432.100",
+        "slice set {slice} mode=USB",
+        "slice set {slice} rxant=XVTB txant=XVTB",
+        "filt {slice} 150 2900"
+      ]
+    },
+    {
+      "label": "20m ANT1",
+      "key": "F3",
+      "commands": [
+        "slice tune {slice} 14.250",
+        "slice set {slice} mode=USB",
+        "slice set {slice} rxant=ANT1 txant=ANT1",
+        "filt {slice} 100 2900"
+      ]
+    },
+    {
+      "label": "40m ANT2",
+      "key": "F4",
+      "commands": [
+        "slice tune {slice} 7.200",
+        "slice set {slice} mode=LSB",
+        "slice set {slice} rxant=ANT2 txant=ANT2",
+        "filt {slice} 100 2900"
+      ]
+    },
+    {
+      "label": "TX -> A",
+      "commands": [
+        "slice set {A} tx=1"
+      ]
+    },
+    {
+      "label": "Second RX 70cm",
+      "commands": [
+        "# Open a second slice on the 70 cm transverter, leaving the active one alone.",
+        "slice create freq=432.100 ant=XVTB mode=USB",
+        "wait 0.5",
+        "filt {B} 150 2900"
+      ]
+    }
+  ]
+}

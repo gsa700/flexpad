@@ -1,0 +1,11 @@
+# Your radio address and your own buttons - keep it local.
+config.json
+
+# Runtime
+*.log
+*.log.*
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+ui_state.json
