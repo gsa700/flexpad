@@ -12,8 +12,9 @@ underneath. It talks to the radio directly, so nothing else has to be running.
     python flexpad.py --send "ant list"       one command, print the reply
     python flexpad.py --run "2m USB"          fire a button headless
 
-Standard library only. Buttons live in config.json next to this file; edit
-them in the app (right-click a button) or in the file, then Reload.
+Standard library only. Buttons live in config.json in your settings folder
+(%APPDATA%lexpad on Windows; Setup... shows the path); edit them in the app
+(right-click a button) or in the file, then Reload.
 """
 
 import argparse
@@ -30,14 +31,39 @@ import time
 import webbrowser
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CONFIG_PATH = os.path.join(HERE, "config.json")
 EXAMPLE_PATH = os.path.join(HERE, "config.example.json")
-UI_STATE_PATH = os.path.join(HERE, "ui_state.json")
-LOG_PATH = os.path.join(HERE, "flexpad.log")
+
+
+def data_dir():
+    """Where config, log and window state live.
+
+    Installed: the per-user settings folder, so the program folder holds only
+    the program and survives reinstalls. Portable or development: a file named
+    `portable` beside this script keeps everything next to it instead.
+    """
+    if os.path.exists(os.path.join(HERE, "portable")):
+        return HERE
+    if sys.platform == "win32":
+        base = os.environ.get("APPDATA") or os.path.expanduser("~")
+    elif sys.platform == "darwin":
+        base = os.path.expanduser("~/Library/Application Support")
+    else:
+        base = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
+    path = os.path.join(base, "flexpad")
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+DATA_DIR = data_dir()
+CONFIG_PATH = os.path.join(DATA_DIR, "config.json")
+UI_STATE_PATH = os.path.join(DATA_DIR, "ui_state.json")
+LOG_PATH = os.path.join(DATA_DIR, "flexpad.log")
 
 DISCOVERY_PORT = 4992
 COMMAND_TIMEOUT = 5.0
 RECONNECT_SECONDS = 5.0
+
+__version__ = "0.1.0"
 
 log = logging.getLogger("flexpad")
 
@@ -810,6 +836,8 @@ class App:
             ttk.Entry(frm, textvariable=var).grid(row=r, column=1, sticky="ew", pady=2)
         ttk.Checkbutton(frm, text="Stop a sequence at the first error",
                         variable=stop_var).grid(row=3, column=0, columnspan=2, sticky="w", pady=6)
+        ttk.Label(frm, text=f"Config and log: {DATA_DIR}", foreground="#6c757d").grid(
+            row=5, column=0, columnspan=3, sticky="w", pady=(8, 0))
 
         def find():
             radios = discover()

@@ -39,13 +39,20 @@ Windows:
 .\install.ps1
 ```
 
-That creates `config.json` from the example if you don't have one and puts a
-"flexpad" shortcut in the Start Menu. It never overwrites an existing config.
-`uninstall.ps1` removes the shortcut and the log; `-Purge` also removes
-`config.json`.
+That copies the program to `%LOCALAPPDATA%\Programs\flexpad`, puts your
+settings in `%APPDATA%\flexpad` (creating `config.json` from the example if
+you don't have one), adds a Start Menu shortcut, and registers in Add/Remove
+Programs. Re-running it upgrades the program and never touches an existing
+config. `uninstall.ps1` removes all of that and keeps your settings unless you
+pass `-Purge`.
 
-Linux and macOS: `python3 flexpad.py`. On Fedora you may need
-`sudo dnf install python3-tkinter`; on Debian, `python3-tk`.
+Linux and macOS: `python3 flexpad.py`. Settings go in `~/.config/flexpad`
+(Linux) or `~/Library/Application Support/flexpad` (macOS). On Fedora you may
+need `sudo dnf install python3-tkinter`; on Debian, `python3-tk`.
+
+Portable or development use: create an empty file named `portable` beside
+`flexpad.py` and it keeps config, log and window state next to itself
+instead.
 
 On first run the app discovers the radio on the LAN. If it can't (different
 subnet, VPN, SmartLink), put the address in **Setup...** or in `config.json`.
@@ -140,7 +147,8 @@ sequence stops there with the radio's reason in the log.
 - Discovery listens for the radio's once-a-second UDP broadcast on port 4992
   with `SO_REUSEADDR`, so it coexists with SmartSDR on the same PC.
 - Window geometry is kept in `ui_state.json`, not `config.json`, so UI state
-  never mixes with your settings.
+  never mixes with your settings. Both live in the settings folder, so the
+  program folder holds only the program and can be replaced on upgrade.
 - The process opts into DPI awareness on Windows so it renders crisp at 150%.
 
 ## License

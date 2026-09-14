@@ -1,5 +1,7 @@
-# Your radio address and your own buttons - keep it local.
+# Your radio address and your own buttons - keep it local. (Only present
+# beside the script in portable mode; installed copies keep it in %APPDATA%.)
 config.json
+portable
 
 # Runtime
 *.log
