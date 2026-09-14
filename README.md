@@ -56,6 +56,18 @@ Right-click a button for Edit, Duplicate, Move and Delete. **+ Button** adds
 one. Everything lands in `config.json`, which you can also edit by hand; press
 **Reload** afterwards.
 
+The editor has an **Insert example** menu that drops a ready-made snippet into
+the command list (tune plus mode plus antenna plus filter, antenna only, open
+a second slice, move TX, load a profile, and so on). **Reference** opens a
+one-page cheat sheet of the commands that matter for this job, shows the
+antenna ports your radio actually has, and links to FlexRadio's full API
+wiki at <https://github.com/flexradio/smartsdr-api-docs/wiki>.
+
+The stock `config.example.json` gives you twelve buttons to start from: four
+band buttons (2 m and 70 cm on the transverter ports, 20 m and 40 m on ANT1),
+four antenna-only buttons (ANT1, ANT2, XVTA, XVTB for whichever slice is
+active), TX to A, TX to B, a second receiver on 70 cm, and Close B.
+
 A button has a label, an optional hotkey, an optional color, and a list of
 command lines:
 
@@ -97,7 +109,9 @@ python flexpad.py --run "2m USB"      fire a button headless (for scripts or a S
 
 ## API notes
 
-The useful commands for this job. Frequencies are in MHz.
+The useful commands for this job, all checked against a FLEX-8600M on
+SmartSDR v4. Frequencies are in MHz. The in-app Reference has the longer
+list.
 
 ```
 slice tune <n> <MHz>                       retune

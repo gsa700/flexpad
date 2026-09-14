@@ -27,6 +27,7 @@ import socket
 import sys
 import threading
 import time
+import webbrowser
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
@@ -382,6 +383,88 @@ def run_sequence(client, commands, stop_on_error=True, report=None):
     return ok
 
 
+# -------------------------------------------------------------- reference ---
+
+REFERENCE_URL = "https://github.com/flexradio/smartsdr-api-docs/wiki"
+
+# Snippets offered by "Insert example" in the button editor. Name -> lines.
+EXAMPLES = [
+    ("Tune + mode + antenna + filter", [
+        "slice tune {slice} 144.200",
+        "slice set {slice} mode=USB",
+        "slice set {slice} rxant=XVTA txant=XVTA",
+        "filt {slice} 150 2900",
+    ]),
+    ("Antenna only, active slice", ["slice set {slice} rxant=ANT1 txant=ANT1"]),
+    ("Second slice on XVTB", [
+        "slice create freq=432.100 ant=XVTB mode=USB",
+        "wait 0.5",
+        "filt {B} 150 2900",
+    ]),
+    ("Move TX to slice A", ["slice set {A} tx=1"]),
+    ("Close slice B", ["slice remove {B}"]),
+    ("Load a global profile", ['profile global load "NAME"']),
+    ("RF power", ["transmit set rfpower=50"]),
+    ("Noise reduction on", ["slice set {slice} nr=1 nr_level=50"]),
+    ("Comment and pause", ["# what this step is for", "wait 0.5"]),
+]
+
+REFERENCE = """\
+FLEXPAD QUICK REFERENCE          SmartSDR TCP/IP API, frequencies in MHz
+
+Placeholders   {slice} active slice    {tx} transmit slice    {A}..{H} slice by letter
+Other lines    wait 0.5  pauses        # starts a comment
+
+TUNING AND MODE
+  slice tune {slice} 14.250                  retune (transverter bands need an XVTR definition)
+  slice set {slice} mode=USB                 USB LSB CW AM SAM FM NFM DFM DIGU DIGL RTTY
+  slice set {slice} step=100                 tuning step, Hz
+  slice lock {slice}                         lock tuning; slice unlock {slice} to release
+
+ANTENNAS
+  slice set {slice} rxant=XVTA txant=XVTA    ports on this radio are listed below
+  slice set {slice} rxant=RX_A               receive-only port; TX stays put
+
+FILTER AND DSP
+  filt {slice} 150 2900                      RX filter edges, Hz; negative for LSB and CW-L
+  slice set {slice} agc_mode=med             off slow med fast
+  slice set {slice} agc_threshold=60
+  slice set {slice} nr=1 nr_level=50         noise reduction
+  slice set {slice} nb=1 nb_level=50         noise blanker
+  slice set {slice} wnb=1 wnb_level=50       wideband noise blanker
+  slice set {slice} anf=1                    auto notch
+
+SLICES
+  slice create freq=432.100 ant=XVTB mode=USB     open a new slice
+  slice remove {B}                           close slice B
+  slice set {A} tx=1                         make A the transmit slice
+  slice set {B} active=1                     make B the active slice
+  slice set {slice} audio_mute=1             mute (0 unmutes)
+  slice set {slice} audio_level=50 audio_pan=50
+  slice set {slice} dax=1                    DAX channel (0 = none)
+
+TRANSMIT
+  transmit set rfpower=50                    RF power, 0-100
+  transmit set tunepower=10                  tune power
+  transmit tune 1                            start tune (0 stops)
+  xmit 1                                     MOX on (0 off); a button can key the radio
+  atu start                                  tune the internal ATU
+  atu bypass
+
+PROFILES AND MEMORIES
+  profile global load "NAME"                 global profile: antennas, slices, everything
+  profile tx load "NAME"                     transmit profile
+  profile mic load "NAME"                    mic profile
+  memory apply 3                             SmartSDR memory by index (it won't set antennas)
+
+INFO - harmless, the reply shows in the log
+  ant list        slice list        info        version        profile global info
+
+Full reference: the FlexRadio wiki (button below). Pages are named TCPIP-slice,
+TCPIP-filt, TCPIP-transmit, TCPIP-profile, and so on.
+"""
+
+
 # ------------------------------------------------------------------- GUI ---
 
 def make_dpi_aware():
@@ -435,8 +518,10 @@ class App:
         self.status_var = tk.StringVar(value="connecting...")
         ttk.Label(top, textvariable=self.status_var).pack(side="left")
         ttk.Button(top, text="Setup...", command=self.edit_setup).pack(side="right")
+        ttk.Button(top, text="Reference", command=self.show_reference).pack(side="right", padx=(0, 4))
         ttk.Button(top, text="Reload", command=self.reload).pack(side="right", padx=(0, 4))
         ttk.Button(top, text="+ Button", command=self.add_button).pack(side="right", padx=(0, 4))
+        self.reference_win = None
 
         # -- button grid --
         self.grid = ttk.Frame(root, padding=(8, 2))
@@ -597,12 +682,30 @@ class App:
         ttk.Entry(frm, textvariable=key_var).grid(row=1, column=1, sticky="ew", pady=2)
         ttk.Label(frm, text="Color").grid(row=2, column=0, sticky="w", pady=2)
         ttk.Entry(frm, textvariable=color_var).grid(row=2, column=1, sticky="ew", pady=2)
-        ttk.Label(frm, text="Commands, one per line").grid(row=3, column=0, columnspan=2,
-                                                            sticky="w", pady=(8, 2))
+        row3 = ttk.Frame(frm)
+        row3.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(8, 2))
+        ttk.Label(row3, text="Commands, one per line").pack(side="left")
+        ttk.Button(row3, text="Reference", command=self.show_reference).pack(side="right")
+        insert = ttk.Menubutton(row3, text="Insert example")
+        insert.pack(side="right", padx=(0, 4))
         text = tk.Text(frm, width=60, height=12, font=self.mono, undo=True)
         text.grid(row=4, column=0, columnspan=2, sticky="nsew")
         frm.rowconfigure(4, weight=1)
         text.insert("1.0", "\n".join(b.get("commands", [])))
+
+        def insert_lines(lines):
+            # Append on a fresh line at the end, so the snippet never splits
+            # a line the user is in the middle of typing.
+            current = text.get("1.0", "end-1c")
+            if current and not current.endswith("\n"):
+                text.insert("end", "\n")
+            text.insert("end", "\n".join(lines) + "\n")
+            text.see("end")
+            text.focus_set()
+        menu = tk.Menu(insert, tearoff=0)
+        for name, lines in EXAMPLES:
+            menu.add_command(label=name, command=lambda l=lines: insert_lines(l))
+        insert.configure(menu=menu)
         hint = ("{slice} = active slice   {tx} = transmit slice   {A}..{H} = slice by letter\n"
                 "wait 0.5 pauses   # starts a comment   hotkey: F1, ctrl+1, alt+shift+x")
         ttk.Label(frm, text=hint, foreground="#6c757d").grid(row=5, column=0, columnspan=2,
@@ -682,6 +785,52 @@ class App:
         btns.grid(row=4, column=0, columnspan=3, sticky="e", pady=(8, 0))
         ttk.Button(btns, text="Cancel", command=win.destroy).pack(side="right")
         ttk.Button(btns, text="Save", command=save).pack(side="right", padx=(0, 6))
+
+    def show_reference(self):
+        tk, ttk = self.tk, self.ttk
+        if self.reference_win and self.reference_win.winfo_exists():
+            self.reference_win.lift()
+            return
+        win = tk.Toplevel(self.root)
+        self.reference_win = win
+        win.title("flexpad reference")
+        frm = ttk.Frame(win, padding=8)
+        frm.pack(fill="both", expand=True)
+        text = tk.Text(frm, width=100, height=40, font=self.mono, wrap="word")
+        sb = ttk.Scrollbar(frm, command=text.yview)
+        text.configure(yscrollcommand=sb.set)
+        text.pack(side="left", fill="both", expand=True)
+        sb.pack(side="right", fill="y")
+        text.insert("1.0", REFERENCE)
+        ports_line = "Antenna ports on this radio: "
+        text.insert("end", "\n" + ports_line + ("asking..." if self.client.connected
+                                                 else "(not connected)") + "\n")
+        text.configure(state="disabled")
+        bar = ttk.Frame(win, padding=(8, 0, 8, 8))
+        bar.pack(fill="x")
+        ttk.Button(bar, text="Open the FlexRadio API wiki",
+                   command=lambda: webbrowser.open(REFERENCE_URL)).pack(side="left")
+        ttk.Button(bar, text="Close", command=win.destroy).pack(side="right")
+
+        if self.client.connected:
+            def ask():
+                try:
+                    code, reply = self.client.send("ant list")
+                except NotConnected:
+                    code, reply = -1, ""
+                ports = reply.replace(",", "  ") if code == 0 else "(no answer)"
+
+                def show():
+                    if not win.winfo_exists():
+                        return
+                    text.configure(state="normal")
+                    idx = text.search(ports_line, "1.0")
+                    if idx:
+                        text.delete(idx, f"{idx} lineend")
+                        text.insert(idx, ports_line + ports)
+                    text.configure(state="disabled")
+                self.root.after(0, show)
+            threading.Thread(target=ask, daemon=True).start()
 
     def reload(self):
         try:

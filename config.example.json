@@ -28,7 +28,7 @@
       ]
     },
     {
-      "label": "20m ANT1",
+      "label": "20m USB",
       "key": "F3",
       "commands": [
         "slice tune {slice} 14.250",
@@ -38,13 +38,42 @@
       ]
     },
     {
-      "label": "40m ANT2",
+      "label": "40m LSB",
       "key": "F4",
       "commands": [
         "slice tune {slice} 7.200",
         "slice set {slice} mode=LSB",
-        "slice set {slice} rxant=ANT2 txant=ANT2",
-        "filt {slice} 100 2900"
+        "slice set {slice} rxant=ANT1 txant=ANT1",
+        "filt {slice} -2900 -100"
+      ]
+    },
+    {
+      "label": "ANT1",
+      "color": "#264653",
+      "commands": [
+        "# Antenna only, on whichever slice is active.",
+        "slice set {slice} rxant=ANT1 txant=ANT1"
+      ]
+    },
+    {
+      "label": "ANT2",
+      "color": "#264653",
+      "commands": [
+        "slice set {slice} rxant=ANT2 txant=ANT2"
+      ]
+    },
+    {
+      "label": "XVTA",
+      "color": "#264653",
+      "commands": [
+        "slice set {slice} rxant=XVTA txant=XVTA"
+      ]
+    },
+    {
+      "label": "XVTB",
+      "color": "#264653",
+      "commands": [
+        "slice set {slice} rxant=XVTB txant=XVTB"
       ]
     },
     {
@@ -54,12 +83,24 @@
       ]
     },
     {
-      "label": "Second RX 70cm",
+      "label": "TX -> B",
+      "commands": [
+        "slice set {B} tx=1"
+      ]
+    },
+    {
+      "label": "2nd RX 70cm",
       "commands": [
         "# Open a second slice on the 70 cm transverter, leaving the active one alone.",
         "slice create freq=432.100 ant=XVTB mode=USB",
         "wait 0.5",
         "filt {B} 150 2900"
+      ]
+    },
+    {
+      "label": "Close B",
+      "commands": [
+        "slice remove {B}"
       ]
     }
   ]
