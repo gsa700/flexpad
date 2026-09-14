@@ -662,6 +662,21 @@ class App:
         save_config(self.cfg)
         self.build_grid()
 
+    def place_over(self, win):
+        """Center a dialog on the main window. Tk otherwise parks it at 0,0."""
+        win.withdraw()
+        win.update_idletasks()
+        w, h = win.winfo_reqwidth(), win.winfo_reqheight()
+        rx, ry = self.root.winfo_rootx(), self.root.winfo_rooty()
+        rw, rh = self.root.winfo_width(), self.root.winfo_height()
+        x = rx + (rw - w) // 2
+        y = ry + (rh - h) // 2
+        # Keep it on screen if the main window sits near an edge.
+        x = max(0, min(x, self.root.winfo_screenwidth() - w))
+        y = max(0, min(y, self.root.winfo_screenheight() - h))
+        win.geometry(f"+{x}+{y}")
+        win.deiconify()
+
     def edit_button(self, i, new=False):
         tk, ttk = self.tk, self.ttk
         b = self.cfg["buttons"][i]
@@ -736,6 +751,7 @@ class App:
         ttk.Button(btns, text="Save", command=save).pack(side="right", padx=(0, 6))
         win.protocol("WM_DELETE_WINDOW", cancel)
         win.bind("<Escape>", lambda e: cancel())
+        self.place_over(win)
         text.focus_set()
 
     def edit_setup(self):
@@ -785,6 +801,7 @@ class App:
         btns.grid(row=4, column=0, columnspan=3, sticky="e", pady=(8, 0))
         ttk.Button(btns, text="Cancel", command=win.destroy).pack(side="right")
         ttk.Button(btns, text="Save", command=save).pack(side="right", padx=(0, 6))
+        self.place_over(win)
 
     def show_reference(self):
         tk, ttk = self.tk, self.ttk
@@ -811,6 +828,7 @@ class App:
         ttk.Button(bar, text="Open the FlexRadio API wiki",
                    command=lambda: webbrowser.open(REFERENCE_URL)).pack(side="left")
         ttk.Button(bar, text="Close", command=win.destroy).pack(side="right")
+        self.place_over(win)
 
         if self.client.connected:
             def ask():
