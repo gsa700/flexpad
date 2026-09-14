@@ -409,6 +409,14 @@ EXAMPLES = [
     ("Comment and pause", ["# what this step is for", "wait 0.5"]),
 ]
 
+# Swatches offered in the button editor. Dark enough to carry white text and
+# to sit well next to the green and slate the example buttons use.
+PALETTE = [
+    ("#2d6a4f", "green"), ("#264653", "slate"), ("#1d3557", "navy"),
+    ("#5a189a", "purple"), ("#7f1d1d", "maroon"), ("#b45309", "amber"),
+    ("#6b4f2a", "brown"), ("#4b5563", "gray"),
+]
+
 REFERENCE = """\
 FLEXPAD QUICK REFERENCE          SmartSDR TCP/IP API, frequencies in MHz
 
@@ -696,7 +704,35 @@ class App:
         ttk.Label(frm, text="Hotkey").grid(row=1, column=0, sticky="w", pady=2)
         ttk.Entry(frm, textvariable=key_var).grid(row=1, column=1, sticky="ew", pady=2)
         ttk.Label(frm, text="Color").grid(row=2, column=0, sticky="w", pady=2)
-        ttk.Entry(frm, textvariable=color_var).grid(row=2, column=1, sticky="ew", pady=2)
+        crow = ttk.Frame(frm)
+        crow.grid(row=2, column=1, sticky="ew", pady=2)
+        preview = tk.Label(crow, text=" Aa ", width=4, relief="raised", bd=1)
+        preview.pack(side="left", padx=(0, 6))
+        plain_bg, plain_fg = preview.cget("background"), preview.cget("foreground")
+        for hex_, name in PALETTE:
+            tk.Button(crow, width=2, background=hex_, activebackground=hex_,
+                      relief="flat", bd=0, cursor="hand2",
+                      command=lambda h=hex_: color_var.set(h)).pack(side="left", padx=1)
+        tk.Button(crow, text="x", width=2, relief="flat", bd=0, cursor="hand2",
+                  command=lambda: color_var.set("")).pack(side="left", padx=(1, 6))
+
+        def pick():
+            from tkinter import colorchooser
+            _, hex_ = colorchooser.askcolor(color=color_var.get() or "#4b5563",
+                                            parent=win, title="Button color")
+            if hex_:
+                color_var.set(hex_)
+        ttk.Button(crow, text="More...", command=pick).pack(side="left", padx=(0, 6))
+        ttk.Entry(crow, textvariable=color_var, width=10).pack(side="left", fill="x", expand=True)
+
+        def refresh_preview(*_):
+            c = color_var.get().strip()
+            try:
+                preview.configure(background=c or plain_bg, foreground="white" if c else plain_fg)
+            except tk.TclError:
+                preview.configure(background="white", foreground="red")   # not a color
+        color_var.trace_add("write", refresh_preview)
+        refresh_preview()
         row3 = ttk.Frame(frm)
         row3.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(8, 2))
         ttk.Label(row3, text="Commands, one per line").pack(side="left")
