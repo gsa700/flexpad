@@ -9,6 +9,10 @@ It talks to the radio directly over the network. SmartSDR does not need to be
 running, and nothing else (no Node-RED, no CAT, no Stream Deck) sits in
 between.
 
+It also drives a FlexControl USB tuning knob, so the knob keeps working when
+you operate from the radio's front panel with SmartSDR closed. See
+[FlexControl knob](#flexcontrol-knob).
+
 ## Why
 
 SmartSDR memory channels store frequency, mode and filter, but not the RX and
@@ -141,12 +145,35 @@ line shows the port in use, the tuning step, and the active slice frequency.
 `python flexpad.py --knob` prints raw knob events without touching the radio,
 handy for checking direction and learning the button codes.
 
+A binding is just the button's label, so in `config.json` the section looks
+like this, with AUX1 firing the 2 m button and AUX2 the 70 cm one:
+
+```json
+"flexcontrol": {
+  "enabled": true,
+  "port": "",
+  "invert": false,
+  "steps": [10, 100, 1000, 10000],
+  "bindings": {
+    "S": "@step", "L": "@next-slice", "C": "@mute",
+    "X1S": "2m USB", "X2S": "70cm USB", "X3S": "20m USB",
+    "X1L": "@tx", "X2L": "", "X3L": "",
+    "X1C": "", "X2C": "", "X3C": ""
+  }
+}
+```
+
+The codes are the knob's own: `S`, `L`, `C` for the knob button's press, hold
+and double click; `X1S`..`X3S`, `X1L`..`X3L`, `X1C`..`X3C` for the same on the
+three aux buttons.
+
 ## Command line
 
 ```
 python flexpad.py --discover          list radios announcing on the LAN
 python flexpad.py --send "ant list"   one command, print the reply, exit
 python flexpad.py --run "2m USB"      fire a button headless (for scripts or a Stream Deck)
+python flexpad.py --knob              print FlexControl events, no radio needed (Ctrl+C to stop)
 ```
 
 `--run` returns exit code 1 if any command failed, so it is safe to chain.
@@ -187,6 +214,15 @@ sequence stops there with the radio's reason in the log.
   never mixes with your settings. Both live in the settings folder, so the
   program folder holds only the program and can be replaced on upgrade.
 - The process opts into DPI awareness on Windows so it renders crisp at 150%.
+- The FlexControl is a USB serial device, vendor `2192` product `0010`, at
+  9600 8N1. It speaks semicolon-terminated tokens with no line endings and
+  sends `F0304;` when a host opens it. `U` and `D` are single knob ticks,
+  `U03` means three ticks arrived in one USB poll. Verified on a real unit:
+  clockwise is `U`, the knob button sends `S`, `L`, `C`, and the aux buttons
+  `X1S`..`X3C`. flexpad reads whatever is waiting, sums the ticks, and sends
+  one `slice tune` per pass, so a fast spin never queues up behind the
+  radio's replies. It updates its own frequency cache before the radio's
+  status echo returns, so consecutive bursts build on each other.
 
 ## License
 
