@@ -30,7 +30,8 @@ $InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\flexpad'
 $DataDir    = Join-Path $env:APPDATA 'flexpad'
 $MinPython  = [version]'3.9'
 $Shortcut   = Join-Path ([Environment]::GetFolderPath('Programs')) 'flexpad.lnk'
-$Files      = @('flexpad.py', 'config.example.json', 'README.md', 'LICENSE', 'uninstall.ps1')
+$Files      = @('flexpad.py', 'config.example.json', 'README.md', 'LICENSE', 'uninstall.ps1',
+                'assets\flexpad.ico', 'assets\flexpad.png')
 
 function Say([string]$m) { Write-Host "  $m" }
 function Fail([string]$m) { Write-Host "ERROR: $m" -ForegroundColor Red; exit 1 }
@@ -69,8 +70,11 @@ Get-CimInstance Win32_Process -Filter "Name = 'pythonw.exe' OR Name = 'python.ex
 # --- Program files ----------------------------------------------------------
 New-Item -ItemType Directory -Force $InstallDir | Out-Null
 foreach ($f in $Files) {
-    Copy-Item (Join-Path $Root $f) (Join-Path $InstallDir $f) -Force
+    $dest = Join-Path $InstallDir $f
+    New-Item -ItemType Directory -Force (Split-Path $dest -Parent) | Out-Null
+    Copy-Item (Join-Path $Root $f) $dest -Force
 }
+$icon = Join-Path $InstallDir 'assets\flexpad.ico'
 # A leftover marker would make the installed copy keep its data beside itself.
 $marker = Join-Path $InstallDir 'portable'
 if (Test-Path $marker) { Remove-Item $marker -Force }
@@ -98,6 +102,7 @@ $lnk.TargetPath = $pythonw
 $lnk.Arguments = "`"$appPy`""
 $lnk.WorkingDirectory = $InstallDir
 $lnk.Description = 'Programmable buttons for a FlexRadio'
+$lnk.IconLocation = "$icon,0"
 $lnk.Save()
 Say "Start Menu shortcut: $Shortcut"
 
@@ -114,7 +119,7 @@ Set-ItemProperty -Path $arp -Name DisplayName -Value 'flexpad'
 Set-ItemProperty -Path $arp -Name DisplayVersion -Value $version
 Set-ItemProperty -Path $arp -Name Publisher -Value 'flexpad project'
 Set-ItemProperty -Path $arp -Name InstallLocation -Value $InstallDir
-Set-ItemProperty -Path $arp -Name DisplayIcon -Value $pythonw
+Set-ItemProperty -Path $arp -Name DisplayIcon -Value $icon
 Set-ItemProperty -Path $arp -Name UninstallString -Value "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$(Join-Path $InstallDir 'uninstall.ps1')`""
 Set-ItemProperty -Path $arp -Name EstimatedSize -Value $size -Type DWord
 Set-ItemProperty -Path $arp -Name NoModify -Value 1 -Type DWord

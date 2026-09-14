@@ -540,6 +540,7 @@ class App:
         self.mono = ("Consolas", 10) if sys.platform == "win32" else "TkFixedFont"
 
         root.title("flexpad")
+        self.apply_icon(root)
         root.minsize(420, 320)
         state = load_ui_state()
         if state.get("geometry"):
@@ -593,6 +594,20 @@ class App:
         self.build_grid()
         self.client = self.new_client()
         root.after(100, self.pump)
+
+    def apply_icon(self, root):
+        """Window and taskbar icon. Missing files just mean the Tk default."""
+        tk = self.tk
+        ico = os.path.join(HERE, "assets", "flexpad.ico")
+        png = os.path.join(HERE, "assets", "flexpad.png")
+        try:
+            if sys.platform == "win32" and os.path.exists(ico):
+                root.iconbitmap(default=ico)
+            elif os.path.exists(png):
+                self._icon = tk.PhotoImage(file=png)     # keep a reference or Tk drops it
+                root.iconphoto(True, self._icon)
+        except tk.TclError as err:
+            log.warning("icon not applied: %s", err)
 
     def new_client(self):
         client = FlexClient(self.cfg["flex_host"], self.cfg["flex_port"],
