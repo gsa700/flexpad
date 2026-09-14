@@ -23,6 +23,7 @@ Buttons live in config.json in your settings folder
 """
 
 import argparse
+import io
 import json
 import logging
 import logging.handlers
@@ -31,9 +32,12 @@ import queue
 import re
 import socket
 import sys
+import subprocess
 import threading
 import time
+import urllib.request
 import webbrowser
+import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 EXAMPLE_PATH = os.path.join(HERE, "config.example.json")
@@ -88,6 +92,7 @@ def load_config():
     cfg.setdefault("flex_port", 4992)
     cfg.setdefault("columns", 4)
     cfg.setdefault("stop_on_error", True)
+    cfg.setdefault("auto_check_updates", False)
     cfg.setdefault("buttons", [])
     for b in cfg["buttons"]:
         b.setdefault("label", "?")
@@ -572,6 +577,133 @@ def format_mhz(hz):
     return f"{hz / 1_000_000:.6f}"
 
 
+# ---------------------------------------------------------------- updates ---
+#
+# Same shape as the other station apps: ask GitHub for the latest release,
+# offer to install it in place, then offer a restart. flexpad is plain files,
+# so "install" means downloading the release's source zip and swapping the
+# program files in the folder this script runs from. Settings are elsewhere
+# and untouched. A git checkout is never updated this way: use git pull.
+
+REPO = "gsa700/flexpad"
+API_LATEST = f"https://api.github.com/repos/{REPO}/releases/latest"
+RELEASES_URL = f"https://github.com/{REPO}/releases/latest"
+UPDATE_FILES = ["flexpad.py", "config.example.json", "README.md", "LICENSE",
+                "uninstall.ps1", "requirements.txt",
+                "assets/flexpad.ico", "assets/flexpad.png"]
+
+
+class UpdateError(Exception):
+    pass
+
+
+def version_tuple(s):
+    out = []
+    for part in str(s).lstrip("vV").strip().split("."):
+        digits = ""
+        for ch in part:
+            if ch.isdigit():
+                digits += ch
+            else:
+                break
+        out.append(int(digits) if digits else 0)
+    return tuple(out)
+
+
+def _fetch(url, timeout):
+    req = urllib.request.Request(url, headers={"User-Agent": f"flexpad/{__version__}"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return resp.read()
+
+
+def check_latest():
+    """Latest release on GitHub: {version, tag, zip_url, url, newer}."""
+    try:
+        data = json.loads(_fetch(API_LATEST, 10))
+    except Exception as err:
+        raise UpdateError(f"could not reach GitHub: {err}")
+    tag = str(data.get("tag_name", ""))
+    if not tag:
+        raise UpdateError("no release found")
+    return {
+        "tag": tag,
+        "version": tag.lstrip("vV"),
+        "zip_url": data.get("zipball_url"),
+        "url": data.get("html_url", RELEASES_URL),
+        "newer": version_tuple(tag) > version_tuple(__version__),
+    }
+
+
+def install_update(info, dest=HERE):
+    """Download the release zip and replace the program files in dest.
+
+    Each file is written beside its target and swapped in with os.replace,
+    so a failed download never leaves a half-written program. Python has
+    already loaded this script, so overwriting it is fine; the new code runs
+    on the next start.
+    """
+    if os.path.isdir(os.path.join(dest, ".git")):
+        raise UpdateError("this is a git checkout - use git pull instead")
+    if not info.get("zip_url"):
+        raise UpdateError("release has no source zip")
+    try:
+        blob = _fetch(info["zip_url"], 120)
+    except Exception as err:
+        raise UpdateError(f"download failed: {err}")
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(blob))
+    except zipfile.BadZipFile:
+        raise UpdateError("downloaded file is not a zip")
+    names = zf.namelist()
+    staged = {}
+    for rel in UPDATE_FILES:
+        member = next((n for n in names if n.endswith("/" + rel)), None)
+        if member is None:
+            if rel == "flexpad.py":
+                raise UpdateError("release zip has no flexpad.py")
+            continue                       # optional file missing: skip
+        staged[rel] = zf.read(member)
+    if b"__version__" not in staged["flexpad.py"]:
+        raise UpdateError("release zip does not look like flexpad")
+    for rel, data in staged.items():
+        target = os.path.join(dest, *rel.split("/"))
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        tmp = target + ".new"
+        with open(tmp, "wb") as fh:
+            fh.write(data)
+        os.replace(tmp, target)
+    return sorted(staged)
+
+
+def relaunch():
+    """Start a fresh copy of this script; the caller then exits."""
+    exe = sys.executable
+    if sys.platform == "win32":
+        w = os.path.join(os.path.dirname(exe), "pythonw.exe")
+        if os.path.exists(w):
+            exe = w
+    flags = 0x00000008 if sys.platform == "win32" else 0   # DETACHED_PROCESS
+    subprocess.Popen([exe, os.path.join(HERE, "flexpad.py")], cwd=HERE,
+                     creationflags=flags, close_fds=True)
+
+
+def sync_registry_version():
+    """Keep the Add/Remove Programs version in step after a self-update."""
+    if sys.platform != "win32":
+        return
+    try:
+        import winreg
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                             r"Software\Microsoft\Windows\CurrentVersion\Uninstall\flexpad",
+                             0, winreg.KEY_READ | winreg.KEY_SET_VALUE)
+        with key:
+            current, _ = winreg.QueryValueEx(key, "DisplayVersion")
+            if current != __version__:
+                winreg.SetValueEx(key, "DisplayVersion", 0, winreg.REG_SZ, __version__)
+    except OSError:
+        pass                                # not installed, or no entry: fine
+
+
 # ---------------------------------------------------------------- capture ---
 
 def capture_slice(client, full=False):
@@ -807,6 +939,10 @@ class App:
         self.knob = None
         self.knob_state = "off"
         self.start_knob()
+        self.update_available = None
+        sync_registry_version()
+        if cfg.get("auto_check_updates"):
+            root.after(3000, lambda: self.check_updates(manual=False))
         root.after(100, self.pump)
 
     def apply_icon(self, root):
@@ -1237,8 +1373,21 @@ class App:
             ttk.Entry(frm, textvariable=var).grid(row=r, column=1, sticky="ew", pady=2)
         ttk.Checkbutton(frm, text="Stop a sequence at the first error",
                         variable=stop_var).grid(row=3, column=0, columnspan=2, sticky="w", pady=6)
+
+        # -- Updates --
+        upd_var = tk.BooleanVar(value=bool(self.cfg.get("auto_check_updates", False)))
+        ttk.Separator(frm).grid(row=5, column=0, columnspan=3, sticky="ew", pady=(10, 6))
+        urow = ttk.Frame(frm)
+        urow.grid(row=6, column=0, columnspan=3, sticky="ew")
+        ttk.Label(urow, text=f"flexpad {__version__}").pack(side="left")
+        ttk.Button(urow, text="Check for updates",
+                   command=lambda: self.check_updates(manual=True)).pack(side="left", padx=(10, 0))
+        ttk.Button(urow, text="Releases page",
+                   command=lambda: webbrowser.open(RELEASES_URL)).pack(side="left", padx=(6, 0))
+        ttk.Checkbutton(frm, text="Check for updates when flexpad starts (notifies only; installing is always a click)",
+                        variable=upd_var).grid(row=7, column=0, columnspan=3, sticky="w", pady=(4, 0))
         ttk.Label(frm, text=f"Config and log: {DATA_DIR}", foreground="#6c757d").grid(
-            row=5, column=0, columnspan=3, sticky="w", pady=(8, 0))
+            row=9, column=0, columnspan=3, sticky="w", pady=(8, 0))
 
         def find():
             radios = discover()
@@ -1259,14 +1408,76 @@ class App:
             self.cfg["flex_port"] = port
             self.cfg["columns"] = max(1, cols)
             self.cfg["stop_on_error"] = stop_var.get()
+            self.cfg["auto_check_updates"] = upd_var.get()
             win.destroy()
             save_config(self.cfg)
             self.reload()
         btns = ttk.Frame(frm)
-        btns.grid(row=4, column=0, columnspan=3, sticky="e", pady=(8, 0))
+        btns.grid(row=10, column=0, columnspan=3, sticky="e", pady=(8, 0))
         ttk.Button(btns, text="Cancel", command=win.destroy).pack(side="right")
         ttk.Button(btns, text="Save", command=save).pack(side="right", padx=(0, 6))
         self.place_over(win)
+
+    # -- updates --
+
+    def check_updates(self, manual):
+        def work():
+            try:
+                info = check_latest()
+            except UpdateError as err:
+                self.events.put(("update", "error", str(err), manual))
+                return
+            self.events.put(("update", "result", info, manual))
+        threading.Thread(target=work, daemon=True).start()
+
+    def on_update_result(self, kind, payload, manual):
+        from tkinter import messagebox
+        if kind == "error":
+            self.log_line("E", f"update check: {payload}")
+            if manual:
+                messagebox.showerror("flexpad", f"Update check failed:\n{payload}", parent=self.root)
+            return
+        info = payload
+        if not info["newer"]:
+            self.log_line("!", f"up to date (v{__version__}, latest {info['tag']})")
+            if manual:
+                messagebox.showinfo("flexpad", f"flexpad {__version__} is the latest version.",
+                                    parent=self.root)
+            return
+        self.update_available = info["version"]
+        self.refresh_status()
+        self.log_line("!", f"update available: v{info['version']} (you have {__version__}) - Setup...")
+        if not manual:
+            return
+        if not messagebox.askyesno("flexpad",
+                                   f"flexpad v{info['version']} is available (you have {__version__}).\n\n"
+                                   "Download and install it now? Your buttons and settings are kept.",
+                                   parent=self.root):
+            return
+        self.log_line("!", f"downloading v{info['version']}...")
+
+        def install():
+            try:
+                files = install_update(info)
+            except UpdateError as err:
+                self.events.put(("update", "install_failed", str(err), True))
+                return
+            self.events.put(("update", "installed", (info["version"], files), True))
+        threading.Thread(target=install, daemon=True).start()
+
+    def on_update_installed(self, kind, payload):
+        from tkinter import messagebox
+        if kind == "install_failed":
+            self.log_line("E", f"update failed: {payload}")
+            messagebox.showerror("flexpad", f"Update failed. The current version is still in place.\n\n{payload}",
+                                 parent=self.root)
+            return
+        version, files = payload
+        self.log_line("!", f"installed v{version}: {', '.join(files)}")
+        if messagebox.askyesno("flexpad", f"flexpad v{version} is installed.\n\nRestart now to use it?",
+                               parent=self.root):
+            relaunch()
+            self.on_close()
 
     def show_reference(self):
         tk, ttk = self.tk, self.ttk
@@ -1373,6 +1584,12 @@ class App:
                     self.refresh_status()
                 elif ev[0] == "fire":
                     self.fire(ev[1])
+                elif ev[0] == "update":
+                    _, kind, payload, manual = ev
+                    if kind in ("installed", "install_failed"):
+                        self.on_update_installed(kind, payload)
+                    else:
+                        self.on_update_result(kind, payload, manual)
         except queue.Empty:
             pass
         self.root.after(100, self.pump)
@@ -1391,7 +1608,8 @@ class App:
             f"{c.host}  slice {s.get('index_letter', '?')}  "
             f"{s.get('RF_frequency', '?')} MHz  {s.get('mode', '?')}  "
             f"rx {s.get('rxant', '?')}  tx {s.get('txant', '?')}  "
-            f"step {s.get('step', '?')}  knob {self.knob_state}")
+            f"step {s.get('step', '?')}  knob {self.knob_state}"
+            + (f"  |  update v{self.update_available} available" if self.update_available else ""))
 
     def log_line(self, tag, text):
         self.logbox.configure(state="normal")
@@ -1458,8 +1676,26 @@ def main():
     ap.add_argument("--quiet", action="store_true", help="with --run: print only errors")
     ap.add_argument("--knob", action="store_true",
                     help="print FlexControl events without touching the radio (Ctrl+C to stop)")
+    ap.add_argument("--update", action="store_true",
+                    help="check GitHub for a newer release and install it in place")
     args = ap.parse_args()
-    setup_logging(to_console=bool(args.discover or args.send or args.run or args.knob))
+    setup_logging(to_console=bool(args.discover or args.send or args.run or args.knob or args.update))
+
+    if args.update:
+        print(f"installed: v{__version__}")
+        try:
+            info = check_latest()
+            print(f"latest:    {info['tag']}")
+            if not info["newer"]:
+                print("already up to date.")
+                return
+            print(f"downloading {info['tag']} ...")
+            files = install_update(info)
+        except UpdateError as err:
+            sys.exit(str(err))
+        print(f"updated to {info['tag']}: {', '.join(files)}")
+        print("restart flexpad to use it.")
+        return
 
     if args.knob:
         fc = knob_config(load_config())

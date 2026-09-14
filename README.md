@@ -176,6 +176,22 @@ The codes are the knob's own: `S`, `L`, `C` for the knob button's press, hold
 and double click; `X1S`..`X3S`, `X1L`..`X3L`, `X1C`..`X3C` for the same on the
 three aux buttons.
 
+## Updates
+
+**Setup → Check for updates** asks GitHub for the latest release. If it is
+newer, flexpad offers to download and install it in place, then asks to
+restart. Your buttons and settings are in the settings folder and are never
+touched. Tick *Check for updates when flexpad starts* to be told about new
+releases at launch; that only notifies, installing is always a click. The
+status line and the log show when an update is waiting.
+
+Installing means downloading the release's source zip and swapping the
+program files in the program folder, since flexpad is plain files. A git
+checkout is never updated this way; use `git pull` there. The Add/Remove
+Programs version is kept in step automatically.
+
+`python flexpad.py --update` does the same from a terminal.
+
 ## Command line
 
 ```
@@ -183,6 +199,7 @@ python flexpad.py --discover          list radios announcing on the LAN
 python flexpad.py --send "ant list"   one command, print the reply, exit
 python flexpad.py --run "2m USB"      fire a button headless (for scripts or a Stream Deck)
 python flexpad.py --knob              print FlexControl events, no radio needed (Ctrl+C to stop)
+python flexpad.py --update            install the latest release in place, if newer
 ```
 
 `--run` returns exit code 1 if any command failed, so it is safe to chain.
