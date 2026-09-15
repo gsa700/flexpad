@@ -5,6 +5,18 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.4.1-beta] - 2026-09-14
+
+Fix only, found within an hour of 0.4.0-beta by unplugging the FlexControl to move it to another box.
+
+### Fixed
+- **Unplugging the FlexControl no longer crashes the app.** On Windows a USB serial port pulled out
+  from under a blocked read raises `OperationCanceledException`, which the knob reader did not
+  expect; it escaped a background thread and took the process down. Three identical entries in
+  `crash.log`, one per unplug. The reader now treats any failure of the port as "knob lost",
+  reports it on the status line and goes back to looking for the knob, so a replug is picked up
+  within a few seconds. Port enumeration and opening are guarded the same way.
+
 ## [0.4.0-beta] - 2026-09-14
 
 Released with win-x64, linux-x64 and linux-arm64 zips; Windows, Fedora (linux-x64) and a Raspberry Pi CM5 (linux-arm64) all verified against the radio, the FlexControl on Windows and on Fedora.

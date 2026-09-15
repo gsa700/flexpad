@@ -54,7 +54,9 @@ public sealed class FlexControlReader : IDisposable
     {
         while (!_stop.IsSet)
         {
-            var name = _findPort();
+            string? name;
+            try { name = _findPort(); }
+            catch (Exception) { name = null; }   // enumeration itself can fail during a replug
             if (name is null)
             {
                 StatusChanged?.Invoke("not found");
@@ -72,7 +74,7 @@ public sealed class FlexControlReader : IDisposable
                 };
                 port.Open();
             }
-            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or InvalidOperationException)
+            catch (Exception ex)
             {
                 StatusChanged?.Invoke(ex is UnauthorizedAccessException ? $"{name} busy" : $"{name}: {ex.Message}");
                 _stop.Wait(RetryDelay);
@@ -81,8 +83,15 @@ public sealed class FlexControlReader : IDisposable
             _port = port;
             StatusChanged?.Invoke(name);
             try { ReadLoop(port); }
-            catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
+            catch (Exception)
             {
+                // Anything the port throws mid-read means the knob is gone or the port was closed
+                // under us: IOException, InvalidOperationException, UnauthorizedAccessException, and
+                // — on Windows when the USB cable is pulled — OperationCanceledException from the
+                // cancelled overlapped read. Whichever it is, the answer is the same: report it and
+                // go back to looking for the knob. This is a background thread; an exception that
+                // escapes here ends the whole process, which is exactly what happened three times
+                // on 2026-09-14 when the FlexControl was unplugged to move it to another box.
                 if (_stop.IsSet) break;
                 StatusChanged?.Invoke($"{name} lost");
             }
