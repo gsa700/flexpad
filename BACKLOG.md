@@ -35,3 +35,7 @@
   (fixed with FLEXPAD_CONFIG_DIR), and on Fedora GNOME the Setup window saved (0,0) and every window
   drifted one title bar per restart (fixed by WindowMemory + frame-extent compensation). David
   after updating both: "positions stick now on windows and fedora".
+- 2026-09-14: 0.6.0–0.6.2-beta. Band set generator, band row along the bottom, and the last
+  position bug: Setup zeroed only on update restarts because CloseAllWindows double-closed it.
+  Reproduced with `--exit-for-update`, guarded, confirmed by David on both boxes: "setup position
+  sticks now on windows and fedora".
