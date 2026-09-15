@@ -5,6 +5,18 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.4.2-beta] - 2026-09-14
+
+Fix only, reported after the first in-app update on both Windows and Fedora.
+
+### Fixed
+- **Window positions survive a restart.** Every relaunch, after an update or a plain close, came back
+  at the top left. The app saves once more at exit, after every window has closed, and a closed
+  window reports its position as (0,0); the main window's reference was still held, so that final
+  save overwrote the real position recorded a moment earlier. The reference is now dropped as soon
+  as the window's bounds are recorded (as W2 does), and the exit-time save only reads windows that
+  are still open. Same fix for the console and Setup windows' positions and the console's open state.
+
 ## [0.4.1-beta] - 2026-09-14
 
 Fix only, found within an hour of 0.4.0-beta by unplugging the FlexControl to move it to another box.

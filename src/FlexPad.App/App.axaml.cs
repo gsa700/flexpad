@@ -185,6 +185,12 @@ public partial class App : Application
         _config.Window.Width = w.Width;
         _config.Window.Height = w.Height;
         _config.Window.ConsoleOpen = _console is not null;
+        // Forget the window now that its bounds are recorded. A closed window reports its position
+        // as (0,0), and the Exit handler saves once more after every window has gone; with the
+        // reference still set, that final save overwrote the real position and every relaunch
+        // — after an update, or a plain close and reopen — came back at the top left (0.4.1-beta,
+        // seen on Windows and Fedora alike). W2 nulls its reference here for the same reason.
+        _main = null;
         // The other windows are top-level, not owned; under OnLastWindowClose they would hold the
         // app open after the panel is gone. Close them with it.
         _console?.Close();
@@ -323,14 +329,16 @@ public partial class App : Application
     {
         try
         {
-            if (_main is not null)
+            // Only a window that is still open has a position worth recording; each Notify*Closing
+            // records its own bounds and drops the reference, so a closed one is never read here.
+            if (_main is { IsVisible: true })
             {
                 _config.Window.X = _main.Position.X; _config.Window.Y = _main.Position.Y;
                 _config.Window.Width = _main.Width; _config.Window.Height = _main.Height;
             }
-            if (_console is not null) { _config.Window.ConsoleX = _console.Position.X; _config.Window.ConsoleY = _console.Position.Y; }
-            if (_setup is not null) { _config.Window.SetupX = _setup.Position.X; _config.Window.SetupY = _setup.Position.Y; }
-            _config.Window.ConsoleOpen = _console is not null;
+            if (_console is { IsVisible: true }) { _config.Window.ConsoleX = _console.Position.X; _config.Window.ConsoleY = _console.Position.Y; }
+            if (_setup is { IsVisible: true }) { _config.Window.SetupX = _setup.Position.X; _config.Window.SetupY = _setup.Position.Y; }
+            if (_main is not null) _config.Window.ConsoleOpen = _console is not null;
             _config.CheckUpdatesAtStartup = _setupVm.CheckUpdatesAtStartup;
             _config.Window.SetupTab = _setupVm.SelectedTabIndex;
             ConfigStore.Save(_config);
