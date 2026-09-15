@@ -20,6 +20,12 @@ public partial class App : Application
     private ConsoleWindow? _console;
     private SetupWindow? _setup;
     private bool _uninstalling;   // set once Uninstall() has run: the exit handler must then guarantee the process ends
+    private readonly Dictionary<Window, WindowMemory> _memory = new();
+
+    private WindowMemory Track(Window w) => _memory[w] = new WindowMemory(w);
+
+    /// <summary>Where the window is, from its own move events; the raw property only as a last resort.</summary>
+    private PixelPoint Pos(Window w) => _memory.TryGetValue(w, out var m) && m.SavePosition(w) is { } p ? p : w.Position;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
@@ -41,8 +47,8 @@ public partial class App : Application
             _setupVm.ReloadRequested += ReloadConfig;
 
             _main = new MainWindow { DataContext = _mainVm };
-            RestoreBounds(_main, _config.Window.X, _config.Window.Y);
-            if (_config.Window is { Width: > 100, Height: > 80 } w) { _main.Width = w.Width.Value; _main.Height = w.Height.Value; }
+            WindowMemory.Restore(_main, _config.Window.X, _config.Window.Y, _config.Window.Width, _config.Window.Height);
+            Track(_main);
             _main.RebuildHotkeys(_mainVm, _radio.Fail);
 
             desktop.MainWindow = _main;
@@ -107,8 +113,8 @@ public partial class App : Application
         var vm = new ButtonEditorViewModel(button, _radio, isNew);
         var win = new ButtonEditorWindow { DataContext = vm };
         var w = _config.Window;
-        RestoreBounds(win, w.EditorX, w.EditorY);
-        if (w is { EditorWidth: > 300, EditorHeight: > 200 }) { win.Width = w.EditorWidth.Value; win.Height = w.EditorHeight.Value; }
+        WindowMemory.Restore(win, w.EditorX, w.EditorY, w.EditorWidth, w.EditorHeight);
+        Track(win);
         var saved = await win.ShowDialog<bool>(_main);
         if (!saved) return;
         vm.ApplyTo(button);
@@ -133,7 +139,8 @@ public partial class App : Application
         if (_console is null)
         {
             _console = new ConsoleWindow { DataContext = new ConsoleViewModel(_radio) };
-            RestoreBounds(_console, _config.Window.ConsoleX, _config.Window.ConsoleY);
+            WindowMemory.Restore(_console, _config.Window.ConsoleX, _config.Window.ConsoleY);
+            Track(_console);
             _console.Show();
         }
         else _console.Show();
@@ -142,8 +149,10 @@ public partial class App : Application
 
     public void NotifyConsoleClosing(ConsoleWindow w)
     {
-        _config.Window.ConsoleX = w.Position.X;
-        _config.Window.ConsoleY = w.Position.Y;
+        var p = Pos(w);
+        _config.Window.ConsoleX = p.X;
+        _config.Window.ConsoleY = p.Y;
+        _memory.Remove(w);
         (w.DataContext as ConsoleViewModel)?.Dispose();
         _console = null;
     }
@@ -152,23 +161,27 @@ public partial class App : Application
     {
         var win = new ReferenceWindow(_radio);
         var w = _config.Window;
-        RestoreBounds(win, w.ReferenceX, w.ReferenceY);
-        if (w is { ReferenceWidth: > 300, ReferenceHeight: > 200 }) { win.Width = w.ReferenceWidth.Value; win.Height = w.ReferenceHeight.Value; }
+        WindowMemory.Restore(win, w.ReferenceX, w.ReferenceY, w.ReferenceWidth, w.ReferenceHeight);
+        Track(win);
         win.Show(owner);
     }
 
     /// <summary>Dialogs record their own bounds on the way out, while the position is still real.</summary>
     public void NotifyEditorClosing(Window w)
     {
-        _config.Window.EditorX = w.Position.X; _config.Window.EditorY = w.Position.Y;
+        var p = Pos(w);
+        _config.Window.EditorX = p.X; _config.Window.EditorY = p.Y;
         _config.Window.EditorWidth = w.Width; _config.Window.EditorHeight = w.Height;
+        _memory.Remove(w);
         SaveConfig();
     }
 
     public void NotifyReferenceClosing(Window w)
     {
-        _config.Window.ReferenceX = w.Position.X; _config.Window.ReferenceY = w.Position.Y;
+        var p = Pos(w);
+        _config.Window.ReferenceX = p.X; _config.Window.ReferenceY = p.Y;
         _config.Window.ReferenceWidth = w.Width; _config.Window.ReferenceHeight = w.Height;
+        _memory.Remove(w);
         SaveConfig();
     }
 
@@ -181,7 +194,8 @@ public partial class App : Application
             _setupVm.LoadFrom(_config, _config.Buttons.Select(b => b.Label));
             if (tab is not null) _setupVm.SelectedTabIndex = tab.Value;
             _setup = new SetupWindow { DataContext = _setupVm };
-            RestoreBounds(_setup, _config.Window.SetupX, _config.Window.SetupY);
+            WindowMemory.Restore(_setup, _config.Window.SetupX, _config.Window.SetupY);
+            Track(_setup);
             _setup.Show();
         }
         else _setup.Show();
@@ -191,8 +205,10 @@ public partial class App : Application
     /// <summary>Setup applies its edits on close: connection, grid, knob.</summary>
     public void NotifySetupClosing(SetupWindow w)
     {
-        _config.Window.SetupX = w.Position.X;
-        _config.Window.SetupY = w.Position.Y;
+        var p = Pos(w);
+        _config.Window.SetupX = p.X;
+        _config.Window.SetupY = p.Y;
+        _memory.Remove(w);
         _setup = null;
         if (_uninstalling) return;
         _setupVm.ApplyTo(_config);
@@ -203,8 +219,9 @@ public partial class App : Application
 
     public void NotifyMainWindowClosing(MainWindow w)
     {
-        _config.Window.X = w.Position.X;
-        _config.Window.Y = w.Position.Y;
+        var p = Pos(w);
+        _config.Window.X = p.X;
+        _config.Window.Y = p.Y;
         _config.Window.Width = w.Width;
         _config.Window.Height = w.Height;
         _config.Window.ConsoleOpen = _console is not null;
@@ -335,19 +352,6 @@ public partial class App : Application
 
     // --- config ---
 
-    private static void RestoreBounds(Window w, double? x, double? y)
-    {
-        if (x is not null && y is not null)
-        {
-            w.WindowStartupLocation = WindowStartupLocation.Manual;
-            w.Position = new PixelPoint((int)x.Value, (int)y.Value);
-        }
-        else
-        {
-            w.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        }
-    }
-
     private void SaveConfig()
     {
         try
@@ -356,11 +360,11 @@ public partial class App : Application
             // records its own bounds and drops the reference, so a closed one is never read here.
             if (_main is { IsVisible: true })
             {
-                _config.Window.X = _main.Position.X; _config.Window.Y = _main.Position.Y;
+                var p = Pos(_main); _config.Window.X = p.X; _config.Window.Y = p.Y;
                 _config.Window.Width = _main.Width; _config.Window.Height = _main.Height;
             }
-            if (_console is { IsVisible: true }) { _config.Window.ConsoleX = _console.Position.X; _config.Window.ConsoleY = _console.Position.Y; }
-            if (_setup is { IsVisible: true }) { _config.Window.SetupX = _setup.Position.X; _config.Window.SetupY = _setup.Position.Y; }
+            if (_console is { IsVisible: true }) { var c = Pos(_console); _config.Window.ConsoleX = c.X; _config.Window.ConsoleY = c.Y; }
+            if (_setup is { IsVisible: true }) { var st = Pos(_setup); _config.Window.SetupX = st.X; _config.Window.SetupY = st.Y; }
             if (_main is not null) _config.Window.ConsoleOpen = _console is not null;
             _config.CheckUpdatesAtStartup = _setupVm.CheckUpdatesAtStartup;
             _config.Window.SetupTab = _setupVm.SelectedTabIndex;

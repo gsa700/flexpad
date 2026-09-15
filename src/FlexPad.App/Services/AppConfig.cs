@@ -149,8 +149,14 @@ public static class ConfigStore
     {
         get
         {
-            var dir = System.IO.Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "flexpad");
+            // FLEXPAD_CONFIG_DIR points a test or screenshot run at a scratch folder, so it never
+            // reads or writes the operator's real settings. On Windows the usual APPDATA redirect
+            // does not isolate a .NET app (it resolves the known folder directly), and a debug run
+            // once overwrote the saved window positions of the real install this way.
+            var dir = Environment.GetEnvironmentVariable("FLEXPAD_CONFIG_DIR");
+            if (string.IsNullOrWhiteSpace(dir))
+                dir = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "flexpad");
             Directory.CreateDirectory(dir);
             return dir;
         }

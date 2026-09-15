@@ -5,6 +5,19 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.5.2-beta] - 2026-09-14
+
+### Fixed
+- **Window positions on Linux.** Two effects, measured on Fedora (GNOME over XWayland) with an
+  isolated copy driven by wmctrl/xdotool: the Setup window sometimes saved (0,0), and every window
+  restored one title bar (37 px) lower than it was saved, drifting down on each restart. Each
+  window now remembers its position from its own move events while visible (`WindowMemory`), never
+  from a read at closing time, and on non-Windows platforms the frame extents are subtracted on save
+  so a restore lands the frame where the window manager last put it. Two close/relaunch cycles on
+  Fedora now reproduce positions exactly; Windows unchanged.
+- `FLEXPAD_CONFIG_DIR` overrides the settings folder, so test and screenshot runs never touch the
+  operator's real config. (A debug run from the developer's shell had overwritten saved positions.)
+
 ## [0.5.1-beta] - 2026-09-14
 
 ### Changed

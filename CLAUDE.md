@@ -6,7 +6,7 @@ radio; a FlexControl USB knob tunes the active slice and its buttons map to acti
 buttons. Exists because SmartSDR memories cannot store RX/TX antenna ports, which matters for
 transverters on XVTA/XVTB, and because the FlexControl only works while SmartSDR is running.
 **.NET 10 + Avalonia 12.1**, MVVM. Windows / Linux / Raspberry Pi (arm64). GPLv3. By David
-Erickson (AB0R). Status: **0.5.1-beta**.
+Erickson (AB0R). Status: **0.5.2-beta**.
 
 Fourth app in the station-tools family. **LP-100A Monitor** (`~/Documents/Programming/lp100a-monitor`)
 is the family's reference template and **W2 Monitor** (`~/Documents/Programming/w2-monitor-x`) its
@@ -104,6 +104,10 @@ station has a port grabber (VictronConnect).
 - App config: `%AppData%\flexpad\config.json` (Windows), `~/.config/flexpad/config.json` (Linux).
   **Lower-case `flexpad` and the Python JSON names on purpose** (`flex_host`, `buttons[]`,
   `flexcontrol{}`) so the prototype's settings carry over. New keys go under `window`.
+- **`FLEXPAD_CONFIG_DIR`** overrides the settings folder. Every test or screenshot launch from a
+  Claude shell MUST set it to a scratch folder: on Windows a .NET app resolves `%APPDATA%` through
+  the known-folder API, so the usual environment redirect does nothing, and on 2026-09-14 debug
+  launches overwrote the operator's saved window positions in the real config.
 - Setup edits (Radio, Knob tabs) apply on close; Discover and Reload act at once. Buttons are edited
   from the grid's context menu and the editor dialog; the App saves after every change.
 - In-app updater (`UpdateService`) targets GitHub `gsa700/flexpad`, checks `/releases/latest`, and
