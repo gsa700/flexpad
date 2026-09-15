@@ -13,7 +13,8 @@ public static class Reference
             "slice set {slice} rxant=XVTA txant=XVTA", "filt {slice} 150 2900",
         }),
         ("Antenna only, active slice", new[] { "slice set {slice} rxant=ANT1 txant=ANT1" }),
-        ("Second slice on XVTB", new[] { "slice create freq=432.100 ant=XVTB mode=USB", "wait 0.5", "filt {B} 150 2900" }),
+        ("Second slice on XVTB", new[] { "slice create freq=432.100 ant=XVTB mode=USB", "wait 0.5",
+            "slice set {B} rxant=XVTB txant=XVTB", "filt {B} 150 2900" }),
         ("Move TX to slice A", new[] { "slice set {A} tx=1" }),
         ("Close slice B", new[] { "slice remove {B}" }),
         ("Load a global profile", new[] { "profile global load \"NAME\"" }),
@@ -55,7 +56,7 @@ public static class Reference
           slice set {slice} anf=1                    auto notch
 
         SLICES
-          slice create freq=432.100 ant=XVTB mode=USB     open a new slice
+          slice create freq=432.100 ant=XVTB mode=USB     open a new slice; ant= is RX only, set txant after
           slice remove {B}                           close slice B
           slice set {A} tx=1                         make A the transmit slice
           slice set {B} active=1                     make B the active slice

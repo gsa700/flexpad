@@ -61,7 +61,9 @@ public sealed class AppConfig
         new("TX -> B", null, null, "slice set {B} tx=1"),
         new("2nd RX 70cm", null, null,
             "# Open a second slice on the 70 cm transverter, leaving the active one alone.",
-            "slice create freq=432.100 ant=XVTB mode=USB", "wait 0.5", "filt {B} 150 2900"),
+            "# ant= only sets the RX port; the TX port comes from the band's last use, so pin both.",
+            "slice create freq=432.100 ant=XVTB mode=USB", "wait 0.5",
+            "slice set {B} rxant=XVTB txant=XVTB", "filt {B} 150 2900"),
         new("Close B", null, null, "slice remove {B}"),
     };
 }
