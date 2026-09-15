@@ -22,8 +22,18 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 
     public ObservableCollection<ButtonViewModel> Buttons { get; } = new();
 
+    /// <summary>Buttons tagged for the row along the bottom: the band set lives here.</summary>
+    public ObservableCollection<ButtonViewModel> BandButtons { get; } = new();
+
     private int _columns = 4;
     public int Columns { get => _columns; private set => SetProperty(ref _columns, value); }
+
+    private int _bandColumns = 1;
+    /// <summary>One row for up to twelve band buttons; more than that wraps.</summary>
+    public int BandColumns { get => _bandColumns; private set => SetProperty(ref _bandColumns, value); }
+
+    private bool _hasBandRow;
+    public bool HasBandRow { get => _hasBandRow; private set => SetProperty(ref _hasBandRow, value); }
 
     private string _statusText = "connecting…";
     public string StatusText { get => _statusText; private set => SetProperty(ref _statusText, value); }
@@ -57,7 +67,11 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         var cfg = _config();
         Columns = Math.Max(1, cfg.Columns);
         Buttons.Clear();
-        foreach (var b in cfg.Buttons) Buttons.Add(new ButtonViewModel(b, this));
+        BandButtons.Clear();
+        foreach (var b in cfg.Buttons)
+            (b.InBandRow ? BandButtons : Buttons).Add(new ButtonViewModel(b, this));
+        HasBandRow = BandButtons.Count > 0;
+        BandColumns = Math.Clamp(BandButtons.Count, 1, 12);
     }
 
     public void Fire(ButtonConfig b) => _ = _radio.RunButtonAsync(b);

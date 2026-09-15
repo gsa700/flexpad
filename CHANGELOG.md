@@ -5,6 +5,15 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.6.1-beta] - 2026-09-14
+
+### Added
+- **Band row.** Buttons can live in their own row along the bottom of the window, separate from the
+  main grid: one row for up to twelve, shorter and smaller than the grid's buttons. The band set
+  generator puts its buttons there by default (an option in the dialog turns it off), and the editor
+  has a "Band row (bottom)" checkbox to move any button in or out. Stored as `"group": "band"` on
+  the button. (David: band buttons "need to be in their own row, at the bottom", 2026-09-14.)
+
 ## [0.6.0-beta] - 2026-09-14
 
 ### Added

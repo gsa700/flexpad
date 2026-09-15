@@ -38,6 +38,10 @@ public sealed class BandSetViewModel : ViewModelBase
     private bool _hotkeys;
     public bool Hotkeys { get => _hotkeys; set => SetProperty(ref _hotkeys, value); }
 
+    private bool _bandRow = true;
+    /// <summary>Put the generated buttons in the row along the bottom rather than the main grid.</summary>
+    public bool BandRow { get => _bandRow; set => SetProperty(ref _bandRow, value); }
+
     private bool _replace = true;
     /// <summary>Overwrite a button that already has the same label rather than adding a twin.</summary>
     public bool ReplaceSameLabel { get => _replace; set => SetProperty(ref _replace, value); }

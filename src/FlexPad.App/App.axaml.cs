@@ -155,13 +155,15 @@ public partial class App : Application
         var added = 0; var replaced = 0;
         foreach (var g in made)
         {
-            var button = new ButtonConfig { Label = g.Label, Key = g.Key, Color = g.Color, Commands = g.Lines };
+            var group = vm.BandRow ? ButtonConfig.BandGroup : null;
+            var button = new ButtonConfig { Label = g.Label, Key = g.Key, Color = g.Color, Commands = g.Lines, Group = group };
             var existing = vm.ReplaceSameLabel ? _config.Buttons.FirstOrDefault(b => b.Label == g.Label) : null;
             if (existing is not null)
             {
                 existing.Key = g.Key ?? existing.Key;
                 existing.Color = g.Color ?? existing.Color;
                 existing.Commands = g.Lines;
+                existing.Group = group;
                 replaced++;
             }
             else

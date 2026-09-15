@@ -38,6 +38,43 @@
       </StackPanel>
     </Grid>
 
+    <!-- Band row along the bottom: the buttons tagged for it (the band-set generator's output by
+         default), one row up to twelve, shorter than the main grid's. -->
+    <StackPanel DockPanel.Dock="Bottom" IsVisible="{Binding HasBandRow}">
+      <Separator Margin="3,8,3,4" Background="{StaticResource TrackBrush}"/>
+      <ItemsControl ItemsSource="{Binding BandButtons}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <UniformGrid Columns="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).BandColumns}"/>
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:ButtonViewModel">
+            <Button Command="{Binding FireCommand}" Background="{Binding Background}" Foreground="{Binding Foreground}"
+                    HorizontalAlignment="Stretch" Margin="3,2" MinHeight="34" Padding="4,2"
+                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center" CornerRadius="5">
+              <Button.ContextMenu>
+                <ContextMenu>
+                  <MenuItem Header="Edit…" Command="{Binding EditCommand}"/>
+                  <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}"/>
+                  <Separator/>
+                  <MenuItem Header="Move earlier" Command="{Binding MoveEarlierCommand}"/>
+                  <MenuItem Header="Move later" Command="{Binding MoveLaterCommand}"/>
+                  <Separator/>
+                  <MenuItem Header="Delete" Command="{Binding DeleteCommand}"/>
+                </ContextMenu>
+              </Button.ContextMenu>
+              <StackPanel>
+                <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" FontSize="12"/>
+                <TextBlock Text="{Binding Hotkey}" HorizontalAlignment="Center" FontSize="9" Opacity="0.75"
+                           IsVisible="{Binding HasHotkey}"/>
+              </StackPanel>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+
     <!-- The grid. Each button fires its sequence; right-click edits it. -->
     <ItemsControl ItemsSource="{Binding Buttons}" Margin="0,10,0,0">
       <ItemsControl.ItemsPanel>

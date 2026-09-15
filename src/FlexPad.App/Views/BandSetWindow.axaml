@@ -3,7 +3,7 @@
         xmlns:vm="using:FlexPad.App.ViewModels"
         x:Class="FlexPad.App.Views.BandSetWindow"
         x:DataType="vm:BandSetViewModel"
-        Width="560" Height="640" CanResize="False"
+        Width="560" Height="670" CanResize="False"
         Background="{StaticResource BgBrush}"
         Icon="/Assets/app.ico"
         Title="FlexPad — Band set">
@@ -52,6 +52,7 @@
       </Grid>
 
       <TextBlock Text="OPTIONS" FontSize="12" FontWeight="Bold" Foreground="{StaticResource DimBrush}" Margin="0,6,0,0"/>
+      <CheckBox Content="Put them in their own row along the bottom of the window" IsChecked="{Binding BandRow, Mode=TwoWay}"/>
       <CheckBox Content="CW spots and mode instead of phone (labels get a CW suffix)" IsChecked="{Binding Cw, Mode=TwoWay}"/>
       <CheckBox Content="Assign hotkeys F1 upward, in band order" IsChecked="{Binding Hotkeys, Mode=TwoWay}"/>
       <CheckBox Content="Replace an existing button with the same label instead of adding another" IsChecked="{Binding ReplaceSameLabel, Mode=TwoWay}"/>

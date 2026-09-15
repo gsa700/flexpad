@@ -18,6 +18,7 @@ public sealed class ButtonEditorViewModel : ViewModelBase
         _hotkey = button.Key ?? "";
         _colorHex = button.Color ?? "";
         _commandsText = string.Join("\n", button.Commands);
+        _inBandRow = button.InBandRow;
         foreach (var (hex, name) in Reference.Palette)
             Swatches.Add(new Swatch(hex, name, new RelayCommand(() => ColorHex = hex)));
         ClearColorCommand = new RelayCommand(() => ColorHex = "");
@@ -137,6 +138,10 @@ public sealed class ButtonEditorViewModel : ViewModelBase
     private string _commandsText;
     public string CommandsText { get => _commandsText; set => SetProperty(ref _commandsText, value); }
 
+    private bool _inBandRow;
+    /// <summary>Show this button in the row along the bottom instead of the main grid.</summary>
+    public bool InBandRow { get => _inBandRow; set => SetProperty(ref _inBandRow, value); }
+
     private string _captureStatus = "";
     public string CaptureStatus { get => _captureStatus; private set => SetProperty(ref _captureStatus, value); }
 
@@ -185,6 +190,7 @@ public sealed class ButtonEditorViewModel : ViewModelBase
         b.Label = string.IsNullOrWhiteSpace(Label) ? "?" : Label.Trim();
         b.Key = string.IsNullOrWhiteSpace(Hotkey) ? null : Hotkey.Trim();
         b.Color = string.IsNullOrWhiteSpace(ColorHex) ? null : ColorHex.Trim();
+        b.Group = InBandRow ? ButtonConfig.BandGroup : null;
         var lines = CommandsText.Replace("\r\n", "\n").Split('\n').Select(l => l.TrimEnd()).ToList();
         while (lines.Count > 0 && lines[^1].Length == 0) lines.RemoveAt(lines.Count - 1);
         b.Commands = lines;

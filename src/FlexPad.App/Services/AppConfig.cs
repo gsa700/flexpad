@@ -85,7 +85,13 @@ public sealed class ButtonConfig
     [JsonPropertyName("color")] [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? Color { get; set; }
     [JsonPropertyName("commands")] public List<string> Commands { get; set; } = new();
 
-    public ButtonConfig Clone() => new() { Label = Label, Key = Key, Color = Color, Commands = Commands.ToList() };
+    /// <summary>Where the button is shown: null for the main grid, "band" for the row along the bottom.</summary>
+    [JsonPropertyName("group")] [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? Group { get; set; }
+
+    public const string BandGroup = "band";
+    [JsonIgnore] public bool InBandRow => Group == BandGroup;
+
+    public ButtonConfig Clone() => new() { Label = Label, Key = Key, Color = Color, Commands = Commands.ToList(), Group = Group };
 }
 
 public sealed class KnobConfig

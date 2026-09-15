@@ -14,7 +14,11 @@
     <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Label, Mode=TwoWay}" Margin="0,0,0,6"/>
 
     <TextBlock Grid.Row="1" Grid.Column="0" Text="Hotkey" VerticalAlignment="Center" Margin="0,0,10,6"/>
-    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Hotkey, Mode=TwoWay}" PlaceholderText="F1, Ctrl+1, Alt+Shift+X" Margin="0,0,0,6"/>
+    <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+      <TextBox Grid.Column="0" Text="{Binding Hotkey, Mode=TwoWay}" PlaceholderText="F1, Ctrl+1, Alt+Shift+X"/>
+      <CheckBox Grid.Column="1" Content="Band row (bottom)" IsChecked="{Binding InBandRow, Mode=TwoWay}" Margin="10,0,0,0"
+                ToolTip.Tip="Show this button in the row along the bottom instead of the main grid"/>
+    </Grid>
 
     <TextBlock Grid.Row="2" Grid.Column="0" Text="Color" VerticalAlignment="Center" Margin="0,0,10,6"/>
     <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="4" Margin="0,0,0,6">
