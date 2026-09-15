@@ -41,4 +41,10 @@ public partial class ReferenceWindow : Window
     }
 
     private void OnCloseClick(object? sender, RoutedEventArgs e) => Close();
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        (Avalonia.Application.Current as App)?.NotifyReferenceClosing(this);
+        base.OnClosing(e);
+    }
 }

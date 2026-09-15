@@ -29,5 +29,11 @@ public partial class ButtonEditorWindow : Window
 
     private void OnSave(object? sender, RoutedEventArgs e) => Close(true);
     private void OnCancel(object? sender, RoutedEventArgs e) => Close(false);
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        (Avalonia.Application.Current as App)?.NotifyEditorClosing(this);
+        base.OnClosing(e);
+    }
     private void OnReferenceClick(object? sender, RoutedEventArgs e) => (Avalonia.Application.Current as App)?.ShowReference(this);
 }

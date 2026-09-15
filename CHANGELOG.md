@@ -5,6 +5,28 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.5.0-beta] - 2026-09-14
+
+### Added
+- **Build from choices** in the button editor. A panel with frequency, mode, RX antenna, TX antenna,
+  filter edges and an optional step; Build appends the command lines to the list, where they stay
+  editable, and names a new button from the frequency and mode. The mode and antenna lists are the
+  radio's own (`mode_list`, `ant_list`, `tx_ant_list` from slice status), so each radio offers exactly
+  the ports it has, and the fields are prefilled from the active slice. Picking a mode fills in its
+  usual filter. Someone who never wants to see a command can now make a button with + Button, a few
+  picks, Build, Save. (David's idea, 2026-09-14; chosen over a wizard because buttons aren't all one
+  shape and the text list stays the source of truth.)
+- `--edit` debug switch opens the new-button editor at launch.
+
+### Fixed
+- **The button editor and the Reference window remember their position and size**, like the other
+  windows. (David, 2026-09-14.)
+
+### Changed
+- The shipped "2nd RX 70cm" button, the example snippet and the reference now set both antenna
+  ports after `slice create`, because `ant=` only sets the RX port and the TX port came from the
+  band's last use.
+
 ## [0.4.3-beta] - 2026-09-14
 
 ### Changed

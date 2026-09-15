@@ -29,6 +29,9 @@ profile, and so on.
 
 - **Buttons** in a grid you size in Setup. Right-click to edit, duplicate, reorder or delete.
   Hotkeys (`F1`, `Ctrl+1`) work while the window has focus. Colours from a swatch palette.
+- **Build from choices**: in the editor, pick frequency, mode, RX and TX antenna, filter and step
+  from lists the radio itself reports, press Build, and the command lines appear, ready to save or
+  tweak. No command knowledge needed.
 - **Capture slice**: set the radio up the way you want it, then capture the active slice as
   commands. Basic takes frequency, mode, both antenna ports and the filter; Full adds tuning step,
   AGC, noise tools, RF gain, DAX and TX power. A new button is labelled from the frequency and mode.

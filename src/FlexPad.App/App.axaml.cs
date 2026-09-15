@@ -75,6 +75,8 @@ public partial class App : Application
 
                 if (updateFailed) ShowSetup(SetupViewModel.UpdatesTab);
                 else if (openSetup) ShowSetup();
+                else if (Environment.GetCommandLineArgs().Any(a => a.Equals("--edit", StringComparison.OrdinalIgnoreCase)))
+                    _mainVm.Add();   // debug: open the new-button editor straight away
 
                 if (_config.CheckUpdatesAtStartup)
                 {
@@ -104,6 +106,9 @@ public partial class App : Application
         if (_main is null) return;
         var vm = new ButtonEditorViewModel(button, _radio, isNew);
         var win = new ButtonEditorWindow { DataContext = vm };
+        var w = _config.Window;
+        RestoreBounds(win, w.EditorX, w.EditorY);
+        if (w is { EditorWidth: > 300, EditorHeight: > 200 }) { win.Width = w.EditorWidth.Value; win.Height = w.EditorHeight.Value; }
         var saved = await win.ShowDialog<bool>(_main);
         if (!saved) return;
         vm.ApplyTo(button);
@@ -145,8 +150,26 @@ public partial class App : Application
 
     public void ShowReference(Window owner)
     {
-        var w = new ReferenceWindow(_radio);
-        w.Show(owner);
+        var win = new ReferenceWindow(_radio);
+        var w = _config.Window;
+        RestoreBounds(win, w.ReferenceX, w.ReferenceY);
+        if (w is { ReferenceWidth: > 300, ReferenceHeight: > 200 }) { win.Width = w.ReferenceWidth.Value; win.Height = w.ReferenceHeight.Value; }
+        win.Show(owner);
+    }
+
+    /// <summary>Dialogs record their own bounds on the way out, while the position is still real.</summary>
+    public void NotifyEditorClosing(Window w)
+    {
+        _config.Window.EditorX = w.Position.X; _config.Window.EditorY = w.Position.Y;
+        _config.Window.EditorWidth = w.Width; _config.Window.EditorHeight = w.Height;
+        SaveConfig();
+    }
+
+    public void NotifyReferenceClosing(Window w)
+    {
+        _config.Window.ReferenceX = w.Position.X; _config.Window.ReferenceY = w.Position.Y;
+        _config.Window.ReferenceWidth = w.Width; _config.Window.ReferenceHeight = w.Height;
+        SaveConfig();
     }
 
     /// <param name="tab">Tab to select first, for when Setup is opened to show something specific.</param>

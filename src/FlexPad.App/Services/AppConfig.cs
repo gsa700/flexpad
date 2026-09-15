@@ -122,6 +122,14 @@ public sealed class WindowConfig
     [JsonPropertyName("setup_x")] public double? SetupX { get; set; }
     [JsonPropertyName("setup_y")] public double? SetupY { get; set; }
     [JsonPropertyName("setup_tab")] public int SetupTab { get; set; }
+    [JsonPropertyName("editor_x")] public double? EditorX { get; set; }
+    [JsonPropertyName("editor_y")] public double? EditorY { get; set; }
+    [JsonPropertyName("editor_width")] public double? EditorWidth { get; set; }
+    [JsonPropertyName("editor_height")] public double? EditorHeight { get; set; }
+    [JsonPropertyName("reference_x")] public double? ReferenceX { get; set; }
+    [JsonPropertyName("reference_y")] public double? ReferenceY { get; set; }
+    [JsonPropertyName("reference_width")] public double? ReferenceWidth { get; set; }
+    [JsonPropertyName("reference_height")] public double? ReferenceHeight { get; set; }
 }
 
 public static class ConfigStore

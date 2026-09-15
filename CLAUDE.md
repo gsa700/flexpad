@@ -6,7 +6,7 @@ radio; a FlexControl USB knob tunes the active slice and its buttons map to acti
 buttons. Exists because SmartSDR memories cannot store RX/TX antenna ports, which matters for
 transverters on XVTA/XVTB, and because the FlexControl only works while SmartSDR is running.
 **.NET 10 + Avalonia 12.1**, MVVM. Windows / Linux / Raspberry Pi (arm64). GPLv3. By David
-Erickson (AB0R). Status: **0.4.3-beta**.
+Erickson (AB0R). Status: **0.5.0-beta**.
 
 Fourth app in the station-tools family. **LP-100A Monitor** (`~/Documents/Programming/lp100a-monitor`)
 is the family's reference template and **W2 Monitor** (`~/Documents/Programming/w2-monitor-x`) its
@@ -28,7 +28,7 @@ dotnet run --project src/FlexPad.App -- --setup    # open Setup on launch (debug
 dotnet test                                    # xUnit suite — all pure FlexPad.Core logic
 ```
 
-Runtime switches: `--setup`, and the install pair `--install` / `--uninstall` (both take `--quiet`).
+Runtime switches: `--setup`, `--edit` (open the new-button editor, for screenshots), and the install pair `--install` / `--uninstall` (both take `--quiet`).
 
 Solution: `FlexPad.slnx`. Output assembly is `FlexPad` (`FlexPad.exe` on Windows).
 

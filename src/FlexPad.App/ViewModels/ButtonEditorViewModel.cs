@@ -23,6 +23,90 @@ public sealed class ButtonEditorViewModel : ViewModelBase
         ClearColorCommand = new RelayCommand(() => ColorHex = "");
         CaptureBasicCommand = new RelayCommand(() => Capture(false));
         CaptureFullCommand = new RelayCommand(() => Capture(true));
+        BuildCommand = new RelayCommand(Build);
+        PrepareBuilder();
+    }
+
+    // --- build from choices ---
+    //
+    // The lists come from the active slice's status, so they are the radio's own; the fields are
+    // prefilled from the slice too, so "make a button for where I am now" is a Build and a Save.
+
+    public List<string> Modes { get; private set; } = new();
+    public List<string> RxAntennas { get; private set; } = new();
+    public List<string> TxAntennas { get; private set; } = new();
+    public List<string> StepChoices { get; } = new[] { "" }.Concat(ButtonBuilder.StepChoices.Select(s => s.ToString())).ToList();
+    public RelayCommand BuildCommand { get; }
+
+    private string _buildFreq = "";
+    public string BuildFreq { get => _buildFreq; set => SetProperty(ref _buildFreq, value); }
+
+    private string? _buildMode;
+    public string? BuildMode
+    {
+        get => _buildMode;
+        set
+        {
+            if (!SetProperty(ref _buildMode, value) || value is null) return;
+            // A new mode brings its usual filter; the user can still type over it.
+            var (lo, hi) = ButtonBuilder.DefaultFilter(value);
+            BuildFiltLo = lo.ToString();
+            BuildFiltHi = hi.ToString();
+        }
+    }
+
+    private string? _buildRx;
+    public string? BuildRxAnt { get => _buildRx; set => SetProperty(ref _buildRx, value); }
+
+    private string? _buildTx;
+    public string? BuildTxAnt { get => _buildTx; set => SetProperty(ref _buildTx, value); }
+
+    private string _buildFiltLo = "";
+    public string BuildFiltLo { get => _buildFiltLo; set => SetProperty(ref _buildFiltLo, value); }
+
+    private string _buildFiltHi = "";
+    public string BuildFiltHi { get => _buildFiltHi; set => SetProperty(ref _buildFiltHi, value); }
+
+    private string? _buildStep = "";
+    public string? BuildStep { get => _buildStep; set => SetProperty(ref _buildStep, value); }
+
+    private void PrepareBuilder()
+    {
+        var slices = _radio.Client.Slices;
+        var idx = slices.Active();
+        var s = idx is null ? null : slices.Get(idx);
+        Modes = ButtonBuilder.ListFrom(s, "mode_list", ButtonBuilder.DefaultModes);
+        RxAntennas = ButtonBuilder.ListFrom(s, "ant_list", ButtonBuilder.DefaultAntennas);
+        TxAntennas = ButtonBuilder.ListFrom(s, "tx_ant_list", ButtonBuilder.DefaultAntennas);
+        string G(string k, string d) => s is not null && s.TryGetValue(k, out var v) ? v : d;
+
+        var mode = G("mode", "USB");
+        _buildMode = Modes.Contains(mode) ? mode : Modes.FirstOrDefault();
+        var (lo, hi) = ButtonBuilder.DefaultFilter(_buildMode ?? "USB");
+        BuildFreq = G("RF_frequency", "14.250000");
+        BuildRxAnt = RxAntennas.Contains(G("rxant", "")) ? G("rxant", "") : RxAntennas.FirstOrDefault();
+        BuildTxAnt = TxAntennas.Contains(G("txant", "")) ? G("txant", "") : TxAntennas.FirstOrDefault();
+        BuildFiltLo = G("filter_lo", lo.ToString());
+        BuildFiltHi = G("filter_hi", hi.ToString());
+        BuildStep = "";
+    }
+
+    private void Build()
+    {
+        try
+        {
+            if (!int.TryParse(BuildFiltLo, out var lo) || !int.TryParse(BuildFiltHi, out var hi))
+                throw new SequenceException("filter edges must be whole numbers of Hz");
+            var step = int.TryParse(BuildStep, out var st) ? st : 0;
+            var (label, lines) = ButtonBuilder.Build(BuildFreq, BuildMode ?? "", BuildRxAnt ?? "", BuildTxAnt ?? "", lo, hi, step);
+            Insert(lines);
+            if (string.IsNullOrWhiteSpace(Label) || Label == "New") Label = label;
+            CaptureStatus = $"Built {lines.Count} lines from your choices.";
+        }
+        catch (SequenceException ex)
+        {
+            CaptureStatus = ex.Message;
+        }
     }
 
     public bool IsNew { get; }

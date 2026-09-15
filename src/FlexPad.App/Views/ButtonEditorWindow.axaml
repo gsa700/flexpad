@@ -3,12 +3,12 @@
         xmlns:vm="using:FlexPad.App.ViewModels"
         x:Class="FlexPad.App.Views.ButtonEditorWindow"
         x:DataType="vm:ButtonEditorViewModel"
-        Width="640" Height="560" MinWidth="520" MinHeight="420"
+        Width="720" Height="680" MinWidth="600" MinHeight="520"
         Background="{StaticResource BgBrush}"
         Icon="/Assets/app.ico"
         Title="FlexPad — Edit button">
 
-  <Grid Margin="14" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto" ColumnDefinitions="Auto,*">
+  <Grid Margin="14" RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto,Auto" ColumnDefinitions="Auto,*">
 
     <TextBlock Grid.Row="0" Grid.Column="0" Text="Label" VerticalAlignment="Center" Margin="0,0,10,6"/>
     <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Label, Mode=TwoWay}" Margin="0,0,0,6"/>
@@ -37,7 +37,36 @@
       <TextBox Text="{Binding ColorHex, Mode=TwoWay}" Width="110" PlaceholderText="#2d6a4f"/>
     </StackPanel>
 
-    <Grid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,6,0,4">
+    <!-- Build from choices: the radio's own mode and antenna lists, prefilled from the active
+         slice. Build appends the lines to the list below, where they can still be edited. -->
+    <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Background="{StaticResource PanelBrush}"
+            BorderBrush="{StaticResource TrackBrush}" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,6,0,4">
+      <StackPanel Spacing="6">
+        <TextBlock Text="BUILD FROM CHOICES" FontSize="12" FontWeight="Bold" Foreground="{StaticResource DimBrush}"/>
+        <Grid ColumnDefinitions="Auto,*,Auto,*,Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="MHz" VerticalAlignment="Center"/>
+          <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding BuildFreq, Mode=TwoWay}" FontFamily="Consolas"/>
+          <TextBlock Grid.Row="0" Grid.Column="2" Text="Mode" VerticalAlignment="Center"/>
+          <ComboBox Grid.Row="0" Grid.Column="3" ItemsSource="{Binding Modes}" SelectedItem="{Binding BuildMode, Mode=TwoWay}" HorizontalAlignment="Stretch"/>
+          <TextBlock Grid.Row="0" Grid.Column="4" Text="Step" VerticalAlignment="Center"/>
+          <ComboBox Grid.Row="0" Grid.Column="5" ItemsSource="{Binding StepChoices}" SelectedItem="{Binding BuildStep, Mode=TwoWay}" HorizontalAlignment="Stretch"
+                    ToolTip.Tip="Blank leaves the tuning step alone"/>
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="RX ant" VerticalAlignment="Center"/>
+          <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding RxAntennas}" SelectedItem="{Binding BuildRxAnt, Mode=TwoWay}" HorizontalAlignment="Stretch"/>
+          <TextBlock Grid.Row="1" Grid.Column="2" Text="TX ant" VerticalAlignment="Center"/>
+          <ComboBox Grid.Row="1" Grid.Column="3" ItemsSource="{Binding TxAntennas}" SelectedItem="{Binding BuildTxAnt, Mode=TwoWay}" HorizontalAlignment="Stretch"/>
+          <TextBlock Grid.Row="1" Grid.Column="4" Text="Filter" VerticalAlignment="Center"/>
+          <Grid Grid.Row="1" Grid.Column="5" ColumnDefinitions="*,4,*">
+            <TextBox Grid.Column="0" Text="{Binding BuildFiltLo, Mode=TwoWay}" FontFamily="Consolas"/>
+            <TextBox Grid.Column="2" Text="{Binding BuildFiltHi, Mode=TwoWay}" FontFamily="Consolas"/>
+          </Grid>
+          <Button Grid.Row="0" Grid.RowSpan="2" Grid.Column="6" Content="Build" Command="{Binding BuildCommand}"
+                  MinWidth="72" VerticalAlignment="Stretch" VerticalContentAlignment="Center"/>
+        </Grid>
+      </StackPanel>
+    </Border>
+
+    <Grid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,6,0,4">
       <TextBlock Grid.Column="0" Text="COMMANDS, ONE PER LINE" FontSize="12" FontWeight="Bold"
                  Foreground="{StaticResource DimBrush}" VerticalAlignment="Center"/>
       <DropDownButton Grid.Column="1" Content="Capture slice" Margin="0,0,6,0">
@@ -52,16 +81,16 @@
       <Button Grid.Column="3" Content="Reference" Click="OnReferenceClick"/>
     </Grid>
 
-    <TextBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding CommandsText, Mode=TwoWay}"
+    <TextBox Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding CommandsText, Mode=TwoWay}"
              AcceptsReturn="True" AcceptsTab="False" TextWrapping="NoWrap" FontFamily="Consolas" FontSize="13"
              VerticalContentAlignment="Top"/>
 
-    <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,6,0,0" Spacing="2">
+    <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,6,0,0" Spacing="2">
       <TextBlock Text="{Binding Hint}" Foreground="{StaticResource DimBrush}" FontSize="11" TextWrapping="Wrap"/>
       <TextBlock Text="{Binding CaptureStatus}" Foreground="{StaticResource AmberBrush}" FontSize="11" TextWrapping="Wrap"/>
     </StackPanel>
 
-    <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="6" Margin="0,10,0,0">
+    <StackPanel Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="6" Margin="0,10,0,0">
       <Button Content="Save" Click="OnSave" MinWidth="90" IsDefault="True"/>
       <Button Content="Cancel" Click="OnCancel" MinWidth="90" IsCancel="True"/>
     </StackPanel>
