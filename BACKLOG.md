@@ -27,3 +27,6 @@
   device fails the read with an IOException there. Fixed, and the release doubled as the first real
   run of the in-app updater: David updated from Setup, unplugged and replugged the knob, no crash,
   reacquired within seconds.
+- 2026-09-14: 0.4.2-beta (window positions were saved as (0,0) by the exit-time save after the windows
+  closed) and 0.4.3-beta (one-line header with radio and knob dots), both delivered through Setup →
+  Updates to Windows and Fedora and confirmed by David: "dots and positions look right".
