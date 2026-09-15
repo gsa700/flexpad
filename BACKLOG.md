@@ -30,3 +30,8 @@
 - 2026-09-14: 0.4.2-beta (window positions were saved as (0,0) by the exit-time save after the windows
   closed) and 0.4.3-beta (one-line header with radio and knob dots), both delivered through Setup →
   Updates to Windows and Fedora and confirmed by David: "dots and positions look right".
+- 2026-09-14: 0.5.0–0.5.2-beta. Build-from-choices panel and dot labels; then the real position
+  story: Setup "not remembering" on Windows was my own test runs writing into the live config
+  (fixed with FLEXPAD_CONFIG_DIR), and on Fedora GNOME the Setup window saved (0,0) and every window
+  drifted one title bar per restart (fixed by WindowMemory + frame-extent compensation). David
+  after updating both: "positions stick now on windows and fedora".
