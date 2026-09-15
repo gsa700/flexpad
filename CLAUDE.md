@@ -121,8 +121,12 @@ ticks) is hidden unless the console's checkbox is on.
 ## Hardware & workflow notes
 
 - Radio: FLEX-8600M at 10.0.1.106 (AB0R), front-panel model. FlexControl on COM15 here.
-- **Cross-platform validated on real hardware: Windows and Fedora (linux-x64), 2026-09-14**, both
-  connected to the radio at once. The Pi (linux-arm64) build and the knob on Linux are still untested.
+- **Cross-platform validated on real hardware: Windows, Fedora (linux-x64) and the CM5 kiosk
+  (linux-arm64, 10.0.1.25, user `derickson`, SSH by the hambench_pi key), 2026-09-14.** On the Pi
+  the quiet install/uninstall pair round-tripped too. Only the knob on Linux is untested. Launch a
+  GUI there from SSH inside the user session: `XDG_RUNTIME_DIR=/run/user/1000` +
+  `systemd-run --user --unit=<name> --collect --quiet <exe>`; `grim` screenshots with
+  `WAYLAND_DISPLAY=wayland-0`. Beware `pgrep -f` matching the SSH shell's own command line.
 - **The Claude desktop app's shells virtualise `%APPDATA%`** (MSIX): a config written from a Claude
   shell lands in `AppData\Local\Packages\Claude_*\LocalCache\Roaming\flexpad`, not where the real app
   reads. Verify or write there through a one-off scheduled task, or have David run the installer. Bit
