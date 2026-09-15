@@ -5,6 +5,20 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.7.0-beta] - 2026-09-14
+
+### Changed
+- **FlexControl buttons bind to functions, not to flexpad buttons.** The picker in Setup → Knob now
+  offers twenty radio functions and nothing else: cycle tuning step, next slice, mute, TX on this
+  slice, TUNE on/off, MOX on/off, ATU tune, ATU bypass, AMP operate/standby (Power Genius), cycle
+  RX antenna, cycle TX antenna, cycle mode, cycle AGC, NR / NB / WNB / ANF on/off, lock/unlock
+  tuning, RIT and XIT on/off. Each reads the radio's current state and sends the opposite (or the
+  next), and the console says what it did. (David: "you would not use a button on the FC to select
+  a freq preset", 2026-09-14.) A binding to a flexpad button from an older config still works.
+- The radio client now follows amplifier, interlock and ATU status as well as slices and transmit.
+- `KnobActions` in Core is the pure planner (state in, commands out) and is tested; every command
+  it can send was accepted by a FLEX-8600M when sent with the radio's current value.
+
 ## [0.6.2-beta] - 2026-09-14
 
 ### Fixed

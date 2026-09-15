@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:FlexPad.App.ViewModels"
+        xmlns:core="using:FlexPad.Core"
         x:Class="FlexPad.App.Views.SetupWindow"
         x:DataType="vm:SetupViewModel"
         Width="520" Height="600" CanResize="False"
@@ -63,7 +64,7 @@
             <TextBox Grid.Column="1" Text="{Binding KnobSteps, Mode=TwoWay}"/>
           </Grid>
 
-          <TextBlock Text="BUTTONS: A BUILT-IN ACTION OR ONE OF YOUR FLEXPAD BUTTONS" FontSize="12" FontWeight="Bold"
+          <TextBlock Text="BUTTON FUNCTIONS" FontSize="12" FontWeight="Bold"
                      Foreground="{StaticResource DimBrush}" Margin="0,8,0,0"/>
           <ItemsControl ItemsSource="{Binding Bindings}">
             <ItemsControl.ItemTemplate>
@@ -71,7 +72,13 @@
                 <Grid ColumnDefinitions="150,*" Margin="0,0,0,4">
                   <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
                   <ComboBox Grid.Column="1" ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected, Mode=TwoWay}"
-                            HorizontalAlignment="Stretch"/>
+                            HorizontalAlignment="Stretch">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="core:KnobFunction">
+                        <TextBlock Text="{Binding Label}"/>
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>

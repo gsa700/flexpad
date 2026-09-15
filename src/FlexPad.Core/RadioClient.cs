@@ -54,6 +54,10 @@ public sealed partial class RadioClient : IDisposable
     public string? Model { get; private set; }
     public SliceTable Slices { get; } = new();
     public ConcurrentDictionary<string, string> Transmit { get; } = new();
+    public ConcurrentDictionary<string, string> Interlock { get; } = new();
+    public ConcurrentDictionary<string, string> Atu { get; } = new();
+    /// <summary>Amplifier objects by handle (Power Genius, Tuner Genius): merged attributes.</summary>
+    public ConcurrentDictionary<string, ConcurrentDictionary<string, string>> Amplifiers { get; } = new();
 
     public event Action<Traffic, string>? OnTraffic;
     public event Action? StateChanged;
@@ -131,12 +135,18 @@ public sealed partial class RadioClient : IDisposable
         _stream = stream;
         Slices.Clear();
         Transmit.Clear();
+        Interlock.Clear();
+        Atu.Clear();
+        Amplifiers.Clear();
         Error = null;
         Connected = true;
         StateChanged?.Invoke();
 
         Send("sub slice all", wait: false);
         Send("sub tx all", wait: false);
+        Send("sub amplifier all", wait: false);
+        Send("sub interlock all", wait: false);
+        Send("sub atu all", wait: false);
         // Ask who we're talking to. Off this thread, because Send waits for a reply that only this
         // thread's read loop can deliver.
         Task.Run(() =>
@@ -198,6 +208,19 @@ public sealed partial class RadioClient : IDisposable
                 if (Slices.Merge(p.Text)) StateChanged?.Invoke();
                 else if (p.Text.StartsWith("transmit ", StringComparison.Ordinal))
                     foreach (var (k, v) in FlexProtocol.KeyValues(p.Text[9..])) Transmit[k] = v;
+                else if (p.Text.StartsWith("interlock ", StringComparison.Ordinal))
+                    foreach (var (k, v) in FlexProtocol.KeyValues(p.Text[10..])) Interlock[k] = v;
+                else if (p.Text.StartsWith("atu ", StringComparison.Ordinal))
+                    foreach (var (k, v) in FlexProtocol.KeyValues(p.Text[4..])) Atu[k] = v;
+                else if (p.Text.StartsWith("amplifier ", StringComparison.Ordinal))
+                {
+                    // amplifier <handle> key=value...  - incremental like slices, so merge per handle.
+                    var rest = p.Text[10..];
+                    var sp = rest.IndexOf(' ');
+                    var handle = sp < 0 ? rest : rest[..sp];
+                    var attrs = Amplifiers.GetOrAdd(handle, _ => new ConcurrentDictionary<string, string>());
+                    if (sp >= 0) foreach (var (k, v) in FlexProtocol.KeyValues(rest[(sp + 1)..])) attrs[k] = v;
+                }
                 break;
             case LineKind.Version:
                 Version = p.Text;

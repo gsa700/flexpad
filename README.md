@@ -43,8 +43,11 @@ profile, and so on.
   by letter, all resolved from the radio's live status. `wait 0.5` pauses; `#` starts a comment.
 - **FlexControl knob**: turning it tunes the active slice by its current tuning step; fast spins are
   honoured. The knob button and the three aux buttons each have press, hold and double-click,
-  mapped in Setup to built-in actions (cycle the step, next slice, mute, TX to active) or to any
-  FlexPad button. Found by its USB id, so no other serial device is ever opened by mistake.
+  mapped in Setup to radio functions: cycle the tuning step, next slice, mute, TX on this slice,
+  TUNE, MOX, ATU tune and bypass, AMP operate/standby (Power Genius), cycle RX or TX antenna, cycle
+  mode or AGC, NR / NB / WNB / ANF, tuning lock, RIT and XIT. Each reads the radio's state and sends
+  the opposite or the next value. Found by its USB id, so no other serial device is ever opened by
+  mistake.
 - **Console** in its own window: every line to and from the radio, colour-coded, plus a command
   line with history and a one-page **Reference** of the commands that matter.
 - **Setup → Updates**: in-app update from GitHub releases, a startup check if you want it, and

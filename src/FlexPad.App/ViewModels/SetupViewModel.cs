@@ -104,8 +104,8 @@ public sealed class SetupViewModel : ViewModelBase
     public RelayCommand RefreshKnobCommand { get; }
 
     public string KnobHint =>
-        $"{KnobPolicy.ActionStep} cycles the tuning step   {KnobPolicy.ActionNextSlice} moves the active flag   " +
-        $"{KnobPolicy.ActionMute} toggles audio   {KnobPolicy.ActionTx} makes the active slice transmit";
+        "Each function acts on the active slice, or on the radio as a whole (TUNE, MOX, ATU, AMP). " +
+        "AMP switches a Power Genius between operate and standby.";
 
     // --- config in/out ---
 
@@ -123,16 +123,18 @@ public sealed class SetupViewModel : ViewModelBase
         KnobInvert = cfg.Knob.Invert;
         KnobSteps = string.Join(", ", cfg.Knob.Steps);
         KnobDetected = KnobPort.Find() ?? "none";
-        var choices = new List<string> { "" };
-        choices.AddRange(KnobPolicy.Actions);
-        choices.AddRange(buttonLabels);
+        // Functions only: a knob button is for TUNE, the amp, the antenna, not for recalling a band.
+        // A binding to a flexpad button from an older config still works and still shows.
+        var choices = new List<KnobFunction> { new("", "(not bound)") };
+        choices.AddRange(KnobActions.Catalog);
         Bindings.Clear();
         foreach (var code in KnobProtocol.Events)
         {
             var current = cfg.Knob.Bindings.GetValueOrDefault(code) ?? "";
             var list = choices.ToList();
-            if (!list.Contains(current)) list.Add(current);   // a label that no longer exists still shows
-            Bindings.Add(new BindingRow(code, KnobProtocol.EventNames[code], list, current));
+            var selected = list.FirstOrDefault(f => f.Code == current);
+            if (selected is null) { selected = new KnobFunction(current, "button: " + current); list.Add(selected); }
+            Bindings.Add(new BindingRow(code, KnobProtocol.EventNames[code], list, selected));
         }
     }
 
@@ -151,7 +153,7 @@ public sealed class SetupViewModel : ViewModelBase
         var steps = KnobSteps.Replace(",", " ").Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .Select(s => int.TryParse(s, out var v) ? v : -1).Where(v => v > 0).ToList();
         if (steps.Count > 0) cfg.Knob.Steps = steps;
-        foreach (var row in Bindings) cfg.Knob.Bindings[row.Code] = row.Selected ?? "";
+        foreach (var row in Bindings) cfg.Knob.Bindings[row.Code] = row.Selected?.Code ?? "";
     }
 
     // --- Updates tab (shared with the other station apps) ---
@@ -275,7 +277,7 @@ public sealed class SetupViewModel : ViewModelBase
 /// <summary>One knob event and what it does.</summary>
 public sealed class BindingRow : ViewModelBase
 {
-    public BindingRow(string code, string name, List<string> choices, string selected)
+    public BindingRow(string code, string name, List<KnobFunction> choices, KnobFunction selected)
     {
         Code = code;
         Name = name;
@@ -285,8 +287,8 @@ public sealed class BindingRow : ViewModelBase
 
     public string Code { get; }
     public string Name { get; }
-    public List<string> Choices { get; }
+    public List<KnobFunction> Choices { get; }
 
-    private string? _selected;
-    public string? Selected { get => _selected; set => SetProperty(ref _selected, value); }
+    private KnobFunction? _selected;
+    public KnobFunction? Selected { get => _selected; set => SetProperty(ref _selected, value); }
 }

@@ -199,36 +199,30 @@ public sealed class RadioService : IDisposable
     private void KnobAction(string action)
     {
         var c = _client;
-        var idx = c.Slices.Active() ?? throw new NotConnectedException("no active slice");
-        var s = c.Slices.Get(idx)!;
-        switch (action)
+        if (!c.Connected) throw new NotConnectedException("not connected to the radio");
+        var idx = c.Slices.Active();
+        var ctx = new KnobContext
         {
-            case KnobPolicy.ActionStep:
-            {
-                var cur = int.TryParse(s.GetValueOrDefault("step"), out var st) ? st : 0;
-                var next = KnobPolicy.NextStep(_config.Knob.Steps, cur);
-                c.Send($"slice set {idx} step={next}");
-                c.Slices.Set(idx, "step", next.ToString());
-                Post(() => { Note($"tuning step {next} Hz"); StateChanged?.Invoke(); });
-                break;
-            }
-            case KnobPolicy.ActionNextSlice:
-            {
-                var next = KnobPolicy.NextSlice(c.Slices.Live(), idx);
-                if (next is null) { Post(() => Append(Traffic.Knob, "only one slice open")); break; }
-                c.Send($"slice set {next} active=1");
-                break;
-            }
-            case KnobPolicy.ActionMute:
-                c.Send($"slice set {idx} audio_mute={(s.GetValueOrDefault("audio_mute") == "1" ? 0 : 1)}");
-                break;
-            case KnobPolicy.ActionTx:
-                c.Send($"slice set {idx} tx=1");
-                break;
-            default:
-                Post(() => Fail($"unknown knob action {action}"));
-                break;
+            SliceIndex = idx,
+            Slice = idx is null ? null : c.Slices.Get(idx),
+            LiveSlices = c.Slices.Live(),
+            Transmit = c.Transmit.ToDictionary(kv => kv.Key, kv => kv.Value),
+            Interlock = c.Interlock.ToDictionary(kv => kv.Key, kv => kv.Value),
+            Amplifiers = c.Amplifiers.ToDictionary(kv => kv.Key,
+                kv => (IReadOnlyDictionary<string, string>)kv.Value.ToDictionary(x => x.Key, x => x.Value)),
+            Steps = _config.Knob.Steps,
+        };
+        KnobPlan plan;
+        try { plan = KnobActions.Plan(action, ctx); }
+        catch (SequenceException ex) { Post(() => Fail(ex.Message)); return; }
+
+        foreach (var cmd in plan.Commands)
+        {
+            var (code, text) = c.Send(cmd);
+            if (code != 0) { Post(() => Fail($"error 0x{code:X} {text} <- {cmd}")); return; }
         }
+        if (plan.Optimistic is { } opt && idx is not null) c.Slices.Set(idx, opt.Key, opt.Value);
+        Post(() => { Note(plan.Note); StateChanged?.Invoke(); });
     }
 
     public void Dispose()
