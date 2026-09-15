@@ -5,6 +5,15 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.4.3-beta] - 2026-09-14
+
+### Changed
+- **One-line header.** The "FlexPad" heading is gone (it's in the title bar). In its place two dots:
+  radio connection and FlexControl knob, green when up, amber when the knob is held by another
+  program or was unplugged, grey when off or not found; hover for the address and port. The radio's
+  IP and the knob's port are no longer in the status text, which is now just the active slice and
+  sits on the same line as the dots and the toolbar. (David, 2026-09-14.)
+
 ## [0.4.2-beta] - 2026-09-14
 
 Fix only, reported after the first in-app update on both Windows and Fedora.

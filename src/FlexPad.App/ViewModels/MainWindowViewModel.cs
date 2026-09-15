@@ -31,6 +31,15 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     private IBrush _connBrush = Palette.DimBrush;
     public IBrush ConnBrush { get => _connBrush; private set => SetProperty(ref _connBrush, value); }
 
+    private string _connTip = "";
+    public string ConnTip { get => _connTip; private set => SetProperty(ref _connTip, value); }
+
+    private IBrush _knobBrush = Palette.DimBrush;
+    public IBrush KnobBrush { get => _knobBrush; private set => SetProperty(ref _knobBrush, value); }
+
+    private string _knobTip = "";
+    public string KnobTip { get => _knobTip; private set => SetProperty(ref _knobTip, value); }
+
     private string? _updateAvailable;
     public string? UpdateAvailable { get => _updateAvailable; set { if (SetProperty(ref _updateAvailable, value)) RefreshStatus(); } }
 
@@ -86,23 +95,41 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     private void RefreshStatus()
     {
         var c = _radio.Client;
+
+        // Two dots carry the connection state; the text is only the slice. The address and the
+        // knob's port live in the dots' tooltips so the one line stays short.
+        var knob = _radio.KnobState;
+        (KnobBrush, KnobTip) = knob switch
+        {
+            "off" => (Palette.DimBrush, "FlexControl knob is off (Setup, Knob tab)"),
+            "not found" => (Palette.DimBrush, "FlexControl knob not found"),
+            var k when k.EndsWith(" busy") => (Palette.AmberBrush, $"FlexControl on {k[..^5]} is held by another program"),
+            var k when k.EndsWith(" lost") => (Palette.AmberBrush, $"FlexControl on {k[..^5]} was unplugged"),
+            var k when k.Contains(':') => (Palette.RedBrush, $"FlexControl: {k}"),
+            var k => (Palette.GreenBrush, $"FlexControl on {k}"),
+        };
+
         if (!c.Connected)
         {
-            StatusText = $"not connected  {c.Error ?? ""}".TrimEnd();
             ConnBrush = Palette.RedBrush;
+            ConnTip = $"Not connected to {(string.IsNullOrEmpty(c.Host) ? "the radio" : c.Host)}" +
+                      (c.Error is { } e ? $": {e}" : "");
+            StatusText = $"not connected  {c.Error ?? ""}".TrimEnd();
             return;
         }
         ConnBrush = Palette.GreenBrush;
+        ConnTip = $"Connected to {c.Host}:{c.Port}";
+
         var idx = c.Slices.Active();
-        if (idx is null)
+        string text;
+        if (idx is null) text = "no active slice";
+        else
         {
-            StatusText = $"{c.Host}  no active slice  ·  knob {_radio.KnobState}";
-            return;
+            var s = c.Slices.Get(idx)!;
+            string G(string k) => s.GetValueOrDefault(k, "?");
+            text = $"slice {G("index_letter")}  {G("RF_frequency")} MHz  {G("mode")}  " +
+                   $"rx {G("rxant")}  tx {G("txant")}  step {G("step")}";
         }
-        var s = c.Slices.Get(idx)!;
-        string G(string k) => s.GetValueOrDefault(k, "?");
-        var text = $"{c.Host}  slice {G("index_letter")}  {G("RF_frequency")} MHz  {G("mode")}  " +
-                   $"rx {G("rxant")}  tx {G("txant")}  step {G("step")}  ·  knob {_radio.KnobState}";
         if (UpdateAvailable is { } v) text += $"  ·  update {v} available";
         StatusText = text;
     }

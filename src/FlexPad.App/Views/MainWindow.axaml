@@ -10,21 +10,20 @@
 
   <DockPanel Margin="12,10">
 
-    <!-- Header: the toolbar on its own row, then the status line at full width so a long one
-         wraps to two lines at most instead of stacking beside the buttons. -->
-    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
-      <TextBlock Grid.Row="0" Grid.Column="0" Text="FlexPad" FontSize="18" FontWeight="Bold"
-                 Foreground="{StaticResource AmberBrush}" VerticalAlignment="Center"/>
-      <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
+    <!-- Header, one line: two dots (radio, knob — hover for the address and port), the slice
+         status, and the toolbar. The app name is in the title bar already. -->
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto">
+      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" Margin="0,0,10,0">
+        <Ellipse Width="11" Height="11" Fill="{Binding ConnBrush}" ToolTip.Tip="{Binding ConnTip}"/>
+        <Ellipse Width="11" Height="11" Fill="{Binding KnobBrush}" ToolTip.Tip="{Binding KnobTip}"/>
+      </StackPanel>
+      <TextBlock Grid.Column="1" Text="{Binding StatusText}" FontFamily="Consolas" FontSize="12"
+                 Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" Margin="10,0,0,0" VerticalAlignment="Center">
         <Button Content="+ Button" Click="OnAddClick"/>
         <Button Content="Console" Click="OnConsoleClick"/>
         <Button Content="Reference" Click="OnReferenceClick"/>
         <Button Content="Setup" Click="OnSetupClick"/>
-      </StackPanel>
-      <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,0">
-        <Ellipse Width="10" Height="10" Fill="{Binding ConnBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-        <TextBlock Text="{Binding StatusText}" FontFamily="Consolas" FontSize="12"
-                   Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
       </StackPanel>
     </Grid>
 
