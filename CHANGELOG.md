@@ -7,6 +7,8 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [0.4.0-beta] - 2026-09-14
 
+Released with win-x64, linux-x64 and linux-arm64 zips; Windows verified on the author's station, Linux builds untested on hardware.
+
 The port. Everything the Python flexpad did (v0.1.0–v0.3.0, same day), rebuilt on the family
 template so it installs, updates, looks and is laid out like LP-100A Monitor, W2 Monitor and Shack
 Power: a single self-contained executable per platform, self-install on first run, in-app updates
