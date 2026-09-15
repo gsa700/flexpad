@@ -121,6 +121,8 @@ ticks) is hidden unless the console's checkbox is on.
 ## Hardware & workflow notes
 
 - Radio: FLEX-8600M at 10.0.1.106 (AB0R), front-panel model. FlexControl on COM15 here.
+- **Cross-platform validated on real hardware: Windows and Fedora (linux-x64), 2026-09-14**, both
+  connected to the radio at once. The Pi (linux-arm64) build and the knob on Linux are still untested.
 - **The Claude desktop app's shells virtualise `%APPDATA%`** (MSIX): a config written from a Claude
   shell lands in `AppData\Local\Packages\Claude_*\LocalCache\Roaming\flexpad`, not where the real app
   reads. Verify or write there through a one-off scheduled task, or have David run the installer. Bit
