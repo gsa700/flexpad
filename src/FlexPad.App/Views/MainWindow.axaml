@@ -13,9 +13,13 @@
     <!-- Header, one line: two dots (radio, knob — hover for the address and port), the slice
          status, and the toolbar. The app name is in the title bar already. -->
     <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto">
-      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="5" VerticalAlignment="Center" Margin="0,0,10,0">
+      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" Margin="0,0,12,0">
         <Ellipse Width="11" Height="11" Fill="{Binding ConnBrush}" ToolTip.Tip="{Binding ConnTip}"/>
+        <TextBlock Text="{Binding RadioLabel}" FontSize="11" Foreground="{StaticResource DimBrush}"
+                   VerticalAlignment="Center" Margin="0,0,6,0" ToolTip.Tip="{Binding ConnTip}"/>
         <Ellipse Width="11" Height="11" Fill="{Binding KnobBrush}" ToolTip.Tip="{Binding KnobTip}"/>
+        <TextBlock Text="{Binding KnobLabel}" FontSize="11" Foreground="{StaticResource DimBrush}"
+                   VerticalAlignment="Center" ToolTip.Tip="{Binding KnobTip}"/>
       </StackPanel>
       <TextBlock Grid.Column="1" Text="{Binding StatusText}" FontFamily="Consolas" FontSize="12"
                  Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>

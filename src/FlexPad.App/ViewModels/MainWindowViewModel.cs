@@ -34,6 +34,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     private string _connTip = "";
     public string ConnTip { get => _connTip; private set => SetProperty(ref _connTip, value); }
 
+    private string _radioLabel = "Radio";
+    /// <summary>The radio's nickname beside its dot, then model, then a plain word until it answers.</summary>
+    public string RadioLabel { get => _radioLabel; private set => SetProperty(ref _radioLabel, value); }
+
+    public string KnobLabel => "FC";
+
     private IBrush _knobBrush = Palette.DimBrush;
     public IBrush KnobBrush { get => _knobBrush; private set => SetProperty(ref _knobBrush, value); }
 
@@ -108,6 +114,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             var k when k.Contains(':') => (Palette.RedBrush, $"FlexControl: {k}"),
             var k => (Palette.GreenBrush, $"FlexControl on {k}"),
         };
+
+        RadioLabel = c.Nickname is { Length: > 0 } n ? n : c.Model is { Length: > 0 } m ? m : "Radio";
 
         if (!c.Connected)
         {

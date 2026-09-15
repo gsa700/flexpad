@@ -5,6 +5,12 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.5.1-beta] - 2026-09-14
+
+### Changed
+- **Labels on the status dots.** The radio's own nickname (its `name` from the `info` reply, model
+  as the fallback) sits beside the radio dot, and "FC" beside the FlexControl dot. (David, 2026-09-14.)
+
 ## [0.5.0-beta] - 2026-09-14
 
 ### Added

@@ -22,9 +22,13 @@ public enum Traffic { Sent, Received, Status, Note, Error, Knob }
 /// <see cref="OnTraffic"/>; state changes raise <see cref="StateChanged"/>. All events fire on the
 /// client's own thread — the UI marshals.
 /// </remarks>
-public sealed class RadioClient : IDisposable
+public sealed partial class RadioClient : IDisposable
 {
     public const int DefaultPort = 4992;
+
+    // The info reply is comma-separated key="value" pairs: model="FLEX-8600M",name="8600M",...
+    [System.Text.RegularExpressions.GeneratedRegex("(\\w+)=\"([^\"]*)\"")]
+    private static partial System.Text.RegularExpressions.Regex InfoField();
     private static readonly TimeSpan ReconnectDelay = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan CommandTimeout = TimeSpan.FromSeconds(5);
 
@@ -42,6 +46,12 @@ public sealed class RadioClient : IDisposable
     public string? Error { get; private set; }
     public string? Version { get; private set; }
     public string? Handle { get; private set; }
+
+    /// <summary>The radio's nickname (its <c>name</c> in the <c>info</c> reply), once known.</summary>
+    public string? Nickname { get; private set; }
+
+    /// <summary>The radio's model (<c>model</c> in the <c>info</c> reply), once known.</summary>
+    public string? Model { get; private set; }
     public SliceTable Slices { get; } = new();
     public ConcurrentDictionary<string, string> Transmit { get; } = new();
 
@@ -127,6 +137,23 @@ public sealed class RadioClient : IDisposable
 
         Send("sub slice all", wait: false);
         Send("sub tx all", wait: false);
+        // Ask who we're talking to. Off this thread, because Send waits for a reply that only this
+        // thread's read loop can deliver.
+        Task.Run(() =>
+        {
+            try
+            {
+                var (code, text) = Send("info");
+                if (code != 0) return;
+                foreach (var m in InfoField().Matches(text).Cast<System.Text.RegularExpressions.Match>())
+                {
+                    if (m.Groups[1].Value == "name") Nickname = m.Groups[2].Value;
+                    else if (m.Groups[1].Value == "model") Model = m.Groups[2].Value;
+                }
+                StateChanged?.Invoke();
+            }
+            catch (NotConnectedException) { }
+        });
 
         var buf = new byte[8192];
         var pending = new StringBuilder();
