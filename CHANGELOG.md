@@ -5,6 +5,17 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.6.0-beta] - 2026-09-14
+
+### Added
+- **Band set generator** under + Button → Band set…: tick the bands (160 m through 6 m, plus 2 m and
+  70 cm on the transverter ports), choose the antenna for HF, for 2 m and for 70 cm, and it makes one
+  button per band at the band's usual spot — LSB below 10 MHz, USB above, CW on 30 m — with the
+  matching filter. Options: CW spots and mode instead of phone, F-keys in band order, and whether a
+  button with the same label is replaced or a twin added. Every button it makes is an ordinary one.
+  (David asked how to make a series of band buttons, 2026-09-14.)
+- `--bands` debug switch opens the generator at launch.
+
 ## [0.5.2-beta] - 2026-09-14
 
 ### Fixed

@@ -126,6 +126,8 @@ public sealed class WindowConfig
     [JsonPropertyName("editor_y")] public double? EditorY { get; set; }
     [JsonPropertyName("editor_width")] public double? EditorWidth { get; set; }
     [JsonPropertyName("editor_height")] public double? EditorHeight { get; set; }
+    [JsonPropertyName("bandset_x")] public double? BandSetX { get; set; }
+    [JsonPropertyName("bandset_y")] public double? BandSetY { get; set; }
     [JsonPropertyName("reference_x")] public double? ReferenceX { get; set; }
     [JsonPropertyName("reference_y")] public double? ReferenceY { get; set; }
     [JsonPropertyName("reference_width")] public double? ReferenceWidth { get; set; }

@@ -24,6 +24,21 @@ public partial class App : Application
 
     private WindowMemory Track(Window w) => _memory[w] = new WindowMemory(w);
 
+    /// <summary>
+    /// Run a fire-and-forget UI task so that a failure is written to crash.log and the console
+    /// instead of vanishing. A dialog that silently never opens is worse than an error line.
+    /// </summary>
+    private void Fire(Func<Task> work, string what)
+    {
+        _ = work().ContinueWith(t =>
+        {
+            if (t.Exception is null) return;
+            var ex = t.Exception.GetBaseException();
+            CrashLog.Write(what, ex);
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => _radio.Fail($"{what} failed: {ex.Message}"));
+        }, TaskContinuationOptions.OnlyOnFaulted);
+    }
+
     /// <summary>Where the window is, from its own move events; the raw property only as a last resort.</summary>
     private PixelPoint Pos(Window w) => _memory.TryGetValue(w, out var m) && m.SavePosition(w) is { } p ? p : w.Position;
 
@@ -41,7 +56,7 @@ public partial class App : Application
 
             _radio = new RadioService(_config);
             _mainVm = new MainWindowViewModel(_radio, () => _config);
-            _mainVm.EditRequested += (b, isNew) => _ = EditButtonAsync(b, isNew);
+            _mainVm.EditRequested += (b, isNew) => Fire(() => EditButtonAsync(b, isNew), "button editor");
             _mainVm.Changed += () => { SaveConfig(); RebuildButtons(); };
             _setupVm = new SetupViewModel(_config, () => _config.Buttons.Select(b => b.Label));
             _setupVm.ReloadRequested += ReloadConfig;
@@ -83,6 +98,8 @@ public partial class App : Application
                 else if (openSetup) ShowSetup();
                 else if (Environment.GetCommandLineArgs().Any(a => a.Equals("--edit", StringComparison.OrdinalIgnoreCase)))
                     _mainVm.Add();   // debug: open the new-button editor straight away
+                else if (Environment.GetCommandLineArgs().Any(a => a.Equals("--bands", StringComparison.OrdinalIgnoreCase)))
+                    Fire(MakeBandSetAsync, "band set");   // debug: open the band-set generator straight away
 
                 if (_config.CheckUpdatesAtStartup)
                 {
@@ -121,6 +138,50 @@ public partial class App : Application
         if (isNew) _config.Buttons.Add(button);
         SaveConfig();
         RebuildButtons();
+    }
+
+    /// <summary>The band-set generator: a dialog, then a batch of ordinary buttons.</summary>
+    public async Task MakeBandSetAsync()
+    {
+        if (_main is null) return;
+        var vm = new BandSetViewModel(_radio);
+        var win = new BandSetWindow { DataContext = vm };
+        var w = _config.Window;
+        WindowMemory.Restore(win, w.BandSetX, w.BandSetY);
+        Track(win);
+        if (!await win.ShowDialog<bool>(_main)) return;
+
+        var made = vm.Generate();
+        var added = 0; var replaced = 0;
+        foreach (var g in made)
+        {
+            var button = new ButtonConfig { Label = g.Label, Key = g.Key, Color = g.Color, Commands = g.Lines };
+            var existing = vm.ReplaceSameLabel ? _config.Buttons.FirstOrDefault(b => b.Label == g.Label) : null;
+            if (existing is not null)
+            {
+                existing.Key = g.Key ?? existing.Key;
+                existing.Color = g.Color ?? existing.Color;
+                existing.Commands = g.Lines;
+                replaced++;
+            }
+            else
+            {
+                _config.Buttons.Add(button);
+                added++;
+            }
+        }
+        SaveConfig();
+        RebuildButtons();
+        _radio.Note($"band set: {added} button(s) added, {replaced} replaced");
+    }
+
+    public void OpenBandSet() => Fire(MakeBandSetAsync, "band set");
+
+    public void NotifyBandSetClosing(Window w)
+    {
+        var p = Pos(w);
+        _config.Window.BandSetX = p.X; _config.Window.BandSetY = p.Y;
+        _memory.Remove(w);
     }
 
     private void ReloadConfig()

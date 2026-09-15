@@ -24,7 +24,14 @@
       <TextBlock Grid.Column="1" Text="{Binding StatusText}" FontFamily="Consolas" FontSize="12"
                  Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
       <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" Margin="10,0,0,0" VerticalAlignment="Center">
-        <Button Content="+ Button" Click="OnAddClick"/>
+        <DropDownButton Content="+ Button">
+          <DropDownButton.Flyout>
+            <MenuFlyout>
+              <MenuItem Header="New button…" Click="OnAddClick"/>
+              <MenuItem Header="Band set…" Click="OnBandSetClick"/>
+            </MenuFlyout>
+          </DropDownButton.Flyout>
+        </DropDownButton>
         <Button Content="Console" Click="OnConsoleClick"/>
         <Button Content="Reference" Click="OnReferenceClick"/>
         <Button Content="Setup" Click="OnSetupClick"/>

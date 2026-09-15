@@ -15,6 +15,7 @@ public partial class MainWindow : Window
     private App? AppRef => Avalonia.Application.Current as App;
 
     private void OnAddClick(object? sender, RoutedEventArgs e) => (DataContext as MainWindowViewModel)?.Add();
+    private void OnBandSetClick(object? sender, RoutedEventArgs e) => AppRef?.OpenBandSet();
     private void OnConsoleClick(object? sender, RoutedEventArgs e) => AppRef?.ShowConsole();
     private void OnReferenceClick(object? sender, RoutedEventArgs e) => AppRef?.ShowReference(this);
     private void OnSetupClick(object? sender, RoutedEventArgs e) => AppRef?.ShowSetup();
