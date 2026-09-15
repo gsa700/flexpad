@@ -22,3 +22,8 @@
   all four and left the box clean. No crash log. The knob could not be tested there.
 - 2026-09-14: FlexControl plugged into the Fedora box; FlexPad found it by its by-id name and tuned
   the radio. David: "picked it right up and works FB". Every feature is now verified on Linux.
+- 2026-09-14: 0.4.1-beta. Unplugging the knob on Windows crashed 0.4.0-beta (OperationCanceledException
+  from the cancelled overlapped read, unexpected by the reader); Linux was unaffected because a pulled
+  device fails the read with an IOException there. Fixed, and the release doubled as the first real
+  run of the in-app updater: David updated from Setup, unplugged and replugged the knob, no crash,
+  reacquired within seconds.
