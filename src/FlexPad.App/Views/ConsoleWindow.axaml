@@ -1,0 +1,34 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:FlexPad.App.ViewModels"
+        x:Class="FlexPad.App.Views.ConsoleWindow"
+        x:DataType="vm:ConsoleViewModel"
+        Width="760" Height="420" MinWidth="480" MinHeight="240"
+        Background="{StaticResource BgBrush}"
+        Icon="/Assets/app.ico"
+        Title="FlexPad — Console">
+
+  <DockPanel Margin="10">
+
+    <!-- Command line: the same protocol a button speaks, typed by hand. -->
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto" Margin="0,8,0,0">
+      <TextBox Grid.Column="0" x:Name="CommandBox" Text="{Binding Command, Mode=TwoWay}"
+               PlaceholderText="command, e.g. slice set {slice} rxant=XVTA" FontFamily="Consolas" KeyDown="OnCommandKeyDown"/>
+      <Button Grid.Column="1" Content="Send" Command="{Binding SendCommand}" Margin="6,0,10,0" MinWidth="70"/>
+      <CheckBox Grid.Column="2" Content="status traffic" IsChecked="{Binding ShowStatus, Mode=TwoWay}"
+                VerticalAlignment="Center" ToolTip.Tip="Also show the radio's S status stream and knob ticks"/>
+    </Grid>
+
+    <Border Background="#101418" CornerRadius="4" BorderBrush="{StaticResource TrackBrush}" BorderThickness="1">
+      <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto">
+        <ItemsControl ItemsSource="{Binding Rows}" Margin="6,4">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:LogRow">
+              <TextBlock Text="{Binding Text}" Foreground="{Binding Brush}" FontFamily="Consolas" FontSize="12"/>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Border>
+  </DockPanel>
+</Window>

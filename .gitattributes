@@ -1,0 +1,8 @@
+# Keep shell scripts LF (they break on Linux with CRLF) and VBS CRLF (Windows).
+*.sh   text eol=lf
+*.vbs  text eol=crlf
+# Binary assets — never touch line endings.
+*.png  binary
+*.ico  binary
+*.zip  binary
+*.pdf  binary

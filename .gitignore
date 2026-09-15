@@ -1,13 +1,16 @@
-# Your radio address and your own buttons - keep it local. (Only present
-# beside the script in portable mode; installed copies keep it in %APPDATA%.)
-config.json
-portable
+## .NET build output
+bin/
+obj/
 
-# Runtime
-*.log
-*.log.*
+## Rider / VS
+.idea/
+.vs/
+*.user
+
+## Local publish output
+publish/
+artifacts/
+
+## Python era leftovers, if any linger locally
 __pycache__/
 *.py[cod]
-.venv/
-venv/
-ui_state.json

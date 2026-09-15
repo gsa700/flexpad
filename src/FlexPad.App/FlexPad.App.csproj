@@ -1,0 +1,82 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <AssemblyName>FlexPad</AssemblyName>
+    <Version>0.4.0-beta</Version>
+    <Product>FlexPad</Product>
+    <Authors>David Erickson (AB0R)</Authors>
+    <ApplicationIcon>Assets/app.ico</ApplicationIcon>
+    <!-- Release is a TRUE single file: the in-app updater replaces only the exe, so the native
+         libs (Skia/HarfBuzz/ANGLE) MUST be bundled into it, not shipped loose. Without
+         IncludeNativeLibrariesForSelfExtract the updated exe lands with no native deps and
+         crashes on launch. Applies on publish with a RID; ignored by build/run. -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/**" />
+    <!-- Also embedded plainly: the Linux installer writes this icon to the XDG icon directory for
+         the .desktop entry, and the install switch runs before Avalonia is initialised, so the
+         Avalonia asset loader isn't available to read it. It is the 256px frame lifted verbatim out
+         of app.ico (which stores its frames as PNG), so regenerate it from there if the icon ever
+         changes rather than editing the two separately. ~7 KB. -->
+    <EmbeddedResource Include="Assets/app-icon.png" LogicalName="app-icon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Avalonia 12.x. Bump with: dotnet add package Avalonia -->
+    <PackageReference Include="Avalonia" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.1" />
+    <!-- No Avalonia.Diagnostics: it has no 12.x release, and nothing here ever called
+         AttachDevTools(), so the old Debug-only reference was dead weight. If DevTools is ever
+         wanted, find where 12.x moved it rather than re-adding the 11.x package. -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WMI for USB-serial chip-serial pinning (Windows-only; guarded at runtime) -->
+    <PackageReference Include="System.Management" Version="10.0.10" />
+  </ItemGroup>
+
+  <!-- No Tmds.DBus.Protocol pin any more, and this is why, in case it ever looks missing:
+       Avalonia's Linux backend pulls it in transitively via Avalonia.FreeDesktop, and 0.20.0 carried
+       CVE-2026-39959 (CVSS 7.1) — a malicious D-Bus peer could spoof signals, exhaust FDs, or crash
+       the app with a malformed body, on the linux-x64 / linux-arm64 (Pi) builds only. 0.5.0-beta
+       pinned 0.21.3 by hand as the patched release on the same 0.2x line, with a warning never to
+       jump to 0.9x because that crossed a versioning discontinuity and changed API Avalonia called
+       into. That warning applied to Avalonia 11: under Avalonia 12 the framework itself resolves
+       0.94.x, which is patched, so the pin is not merely unnecessary but would now hold the version
+       DOWN. Verify with "dotnet list package", passing the vulnerable and include-transitive switches.
+       Also worth remembering how the original slipped through: the .NET 8 SDK audits only DIRECT
+       packages, .NET 9+ audits transitively, and global.json pins the SDK to 10 to keep it that way. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\FlexPad.Core\FlexPad.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Avalonia 12 pulls SkiaSharp/HarfBuzzSharp builds that ship native .pdb symbols
+       (libSkiaSharp ~81 MB, libHarfBuzzSharp ~20 MB). Unlike the natives themselves these are NOT
+       bundled into the single file — they land loose beside the exe, which both triples the release
+       zips and breaks the "one self-contained exe" the in-app updater relies on, since it copies
+       only the exe. Nobody running a release needs them. The managed pdbs are tiny and stay, so
+       crash traces from this app's own code still resolve. Ported from LP-100A, which hit this
+       first. -->
+  <Target Name="TrimNativeSymbols" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish
+        Remove="@(ResolvedFileToPublish)"
+        Condition="'%(Extension)' == '.pdb' And $([System.String]::Copy('%(Filename)').StartsWith('lib'))" />
+    </ItemGroup>
+  </Target>
+
+</Project>

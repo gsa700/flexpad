@@ -1,0 +1,69 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:FlexPad.App.ViewModels"
+        x:Class="FlexPad.App.Views.ButtonEditorWindow"
+        x:DataType="vm:ButtonEditorViewModel"
+        Width="640" Height="560" MinWidth="520" MinHeight="420"
+        Background="{StaticResource BgBrush}"
+        Icon="/Assets/app.ico"
+        Title="FlexPad — Edit button">
+
+  <Grid Margin="14" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto" ColumnDefinitions="Auto,*">
+
+    <TextBlock Grid.Row="0" Grid.Column="0" Text="Label" VerticalAlignment="Center" Margin="0,0,10,6"/>
+    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Label, Mode=TwoWay}" Margin="0,0,0,6"/>
+
+    <TextBlock Grid.Row="1" Grid.Column="0" Text="Hotkey" VerticalAlignment="Center" Margin="0,0,10,6"/>
+    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Hotkey, Mode=TwoWay}" PlaceholderText="F1, Ctrl+1, Alt+Shift+X" Margin="0,0,0,6"/>
+
+    <TextBlock Grid.Row="2" Grid.Column="0" Text="Color" VerticalAlignment="Center" Margin="0,0,10,6"/>
+    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="4" Margin="0,0,0,6">
+      <!-- Live preview of how the grid button will look. -->
+      <Border Background="{Binding PreviewBackground}" CornerRadius="4" Padding="10,4" Margin="0,0,6,0">
+        <TextBlock Text="Aa" Foreground="{Binding PreviewForeground}"/>
+      </Border>
+      <ItemsControl ItemsSource="{Binding Swatches}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3"/></ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:Swatch">
+            <Button Width="24" Height="24" Padding="0" Background="{Binding Brush}" CornerRadius="3"
+                    Command="{Binding PickCommand}" ToolTip.Tip="{Binding Name}"/>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <Button Content="x" Width="24" Height="24" Padding="0" Command="{Binding ClearColorCommand}" ToolTip.Tip="No colour" Margin="3,0,6,0"/>
+      <TextBox Text="{Binding ColorHex, Mode=TwoWay}" Width="110" PlaceholderText="#2d6a4f"/>
+    </StackPanel>
+
+    <Grid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,6,0,4">
+      <TextBlock Grid.Column="0" Text="COMMANDS, ONE PER LINE" FontSize="12" FontWeight="Bold"
+                 Foreground="{StaticResource DimBrush}" VerticalAlignment="Center"/>
+      <DropDownButton Grid.Column="1" Content="Capture slice" Margin="0,0,6,0">
+        <DropDownButton.Flyout>
+          <MenuFlyout>
+            <MenuItem Header="Basic: frequency, mode, antennas, filter" Command="{Binding CaptureBasicCommand}"/>
+            <MenuItem Header="Full: basic + step, AGC, NR/NB/ANF, RF gain, DAX, TX power" Command="{Binding CaptureFullCommand}"/>
+          </MenuFlyout>
+        </DropDownButton.Flyout>
+      </DropDownButton>
+      <DropDownButton Grid.Column="2" x:Name="ExamplesButton" Content="Insert example" Margin="0,0,6,0"/>
+      <Button Grid.Column="3" Content="Reference" Click="OnReferenceClick"/>
+    </Grid>
+
+    <TextBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding CommandsText, Mode=TwoWay}"
+             AcceptsReturn="True" AcceptsTab="False" TextWrapping="NoWrap" FontFamily="Consolas" FontSize="13"
+             VerticalContentAlignment="Top"/>
+
+    <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,6,0,0" Spacing="2">
+      <TextBlock Text="{Binding Hint}" Foreground="{StaticResource DimBrush}" FontSize="11" TextWrapping="Wrap"/>
+      <TextBlock Text="{Binding CaptureStatus}" Foreground="{StaticResource AmberBrush}" FontSize="11" TextWrapping="Wrap"/>
+    </StackPanel>
+
+    <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="6" Margin="0,10,0,0">
+      <Button Content="Save" Click="OnSave" MinWidth="90" IsDefault="True"/>
+      <Button Content="Cancel" Click="OnCancel" MinWidth="90" IsCancel="True"/>
+    </StackPanel>
+  </Grid>
+</Window>

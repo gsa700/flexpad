@@ -1,0 +1,114 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:FlexPad.App.ViewModels"
+        x:Class="FlexPad.App.Views.SetupWindow"
+        x:DataType="vm:SetupViewModel"
+        Width="520" Height="600" CanResize="False"
+        Background="{StaticResource BgBrush}"
+        Icon="/Assets/app.ico"
+        Title="FlexPad — Setup">
+
+  <!-- Fixed height, not SizeToContent, sized to the longest tab (Knob) so the window doesn't jump on
+       tab switch; every tab's content sits in a ScrollViewer. Tab chrome is styled in App.axaml.
+       Edits on the Radio and Knob tabs are applied when the window closes. -->
+  <TabControl x:Name="Tabs" Margin="8" SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+
+    <!-- ==================== Radio ==================== -->
+    <TabItem Header="Radio" AutomationProperties.Name="Radio">
+      <ScrollViewer>
+        <StackPanel Margin="8" Spacing="10">
+          <TextBlock Text="RADIO" FontSize="12" FontWeight="Bold" Foreground="{StaticResource DimBrush}"/>
+          <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Address" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Host, Mode=TwoWay}" PlaceholderText="blank = find it on the LAN"/>
+            <Button Grid.Row="0" Grid.Column="2" Content="Discover" Command="{Binding DiscoverCommand}"/>
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Port" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Port, Mode=TwoWay}" Width="100" HorizontalAlignment="Left"/>
+          </Grid>
+          <TextBlock Text="{Binding DiscoverStatus}" Foreground="{StaticResource AmberBrush}" FontSize="11" TextWrapping="Wrap"/>
+
+          <TextBlock Text="BUTTONS" FontSize="12" FontWeight="Bold" Foreground="{StaticResource DimBrush}" Margin="0,8,0,0"/>
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+            <TextBlock Grid.Column="0" Text="Grid columns" VerticalAlignment="Center"/>
+            <TextBox Grid.Column="1" Text="{Binding Columns, Mode=TwoWay}" Width="60" HorizontalAlignment="Left"/>
+          </Grid>
+          <CheckBox Content="Stop a sequence at the first error" IsChecked="{Binding StopOnError, Mode=TwoWay}"/>
+
+          <TextBlock Text="SETTINGS FILE" FontSize="12" FontWeight="Bold" Foreground="{StaticResource DimBrush}" Margin="0,8,0,0"/>
+          <TextBlock Text="{Binding ConfigPath}" Foreground="{StaticResource DimBrush}" FontSize="11" TextWrapping="Wrap"/>
+          <TextBlock Text="Buttons can be edited in that file by hand; Reload picks the changes up without restarting."
+                     Foreground="{StaticResource DimBrush}" FontSize="11" TextWrapping="Wrap"/>
+          <Button Content="Reload from disk" Command="{Binding ReloadCommand}" HorizontalAlignment="Left"/>
+        </StackPanel>
+      </ScrollViewer>
+    </TabItem>
+
+    <!-- ==================== Knob ==================== -->
+    <TabItem Header="Knob" AutomationProperties.Name="Knob">
+      <ScrollViewer>
+        <StackPanel Margin="8" Spacing="8">
+          <CheckBox Content="Use the FlexControl knob" IsChecked="{Binding KnobEnabled, Mode=TwoWay}"/>
+          <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+            <TextBlock Grid.Column="0" Text="Port" VerticalAlignment="Center"/>
+            <TextBox Grid.Column="1" Text="{Binding KnobPortName, Mode=TwoWay}" PlaceholderText="blank = find it by USB id"/>
+            <Button Grid.Column="2" Content="Detect" Command="{Binding RefreshKnobCommand}"/>
+          </Grid>
+          <TextBlock Foreground="{StaticResource DimBrush}" FontSize="11">
+            <Run Text="Detected: "/><Run Text="{Binding KnobDetected}"/>
+          </TextBlock>
+          <CheckBox Content="Invert direction" IsChecked="{Binding KnobInvert, Mode=TwoWay}"
+                    ToolTip.Tip="Tick if clockwise tunes down on your unit"/>
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+            <TextBlock Grid.Column="0" Text="Step sizes for @step, Hz" VerticalAlignment="Center"/>
+            <TextBox Grid.Column="1" Text="{Binding KnobSteps, Mode=TwoWay}"/>
+          </Grid>
+
+          <TextBlock Text="BUTTONS: A BUILT-IN ACTION OR ONE OF YOUR FLEXPAD BUTTONS" FontSize="12" FontWeight="Bold"
+                     Foreground="{StaticResource DimBrush}" Margin="0,8,0,0"/>
+          <ItemsControl ItemsSource="{Binding Bindings}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:BindingRow">
+                <Grid ColumnDefinitions="150,*" Margin="0,0,0,4">
+                  <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
+                  <ComboBox Grid.Column="1" ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected, Mode=TwoWay}"
+                            HorizontalAlignment="Stretch"/>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Text="{Binding KnobHint}" Foreground="{StaticResource DimBrush}" FontSize="11" TextWrapping="Wrap"/>
+        </StackPanel>
+      </ScrollViewer>
+    </TabItem>
+
+    <!-- ==================== Updates ==================== -->
+    <TabItem Header="Updates" AutomationProperties.Name="Updates">
+      <ScrollViewer>
+        <StackPanel Margin="8" Spacing="12">
+          <TextBlock Text="{Binding UpdateStatus}" Foreground="{Binding UpdateStatusBrush}" TextWrapping="Wrap"/>
+          <Grid ColumnDefinitions="Auto,Auto,*">
+            <Button Grid.Column="0" Content="{Binding UpdateButtonLabel}" Command="{Binding UpdateCommand}" MinWidth="140"/>
+            <Button Grid.Column="1" Content="Release page" Command="{Binding OpenReleaseCommand}" Margin="6,0,0,0"/>
+          </Grid>
+          <CheckBox Content="Check for updates at startup" IsChecked="{Binding CheckUpdatesAtStartup, Mode=TwoWay}" Foreground="{StaticResource TextBrush}"/>
+
+          <!-- Only appears when a previous run actually crashed, so it is silent on a healthy machine. -->
+          <StackPanel IsVisible="{Binding ShowCrashNotice}" Spacing="6" Margin="0,4,0,0">
+            <TextBlock Text="{Binding CrashNotice}" Foreground="{StaticResource AmberBrush}" FontSize="11" TextWrapping="Wrap"/>
+            <Button Content="Show crash log" Command="{Binding ShowCrashLogCommand}" HorizontalAlignment="Left"/>
+          </StackPanel>
+
+          <!-- Removal lives in the app because on Windows there is nowhere else for it: see
+               InstallService for why there is no installed-apps entry. Installed copies only. -->
+          <StackPanel IsVisible="{Binding CanUninstall}" Spacing="6" Margin="0,8,0,0">
+            <TextBlock Text="REMOVE" FontSize="12" FontWeight="Bold" Foreground="{StaticResource DimBrush}"/>
+            <TextBlock Text="Removes the program from this computer. You'll be asked whether to keep your settings and buttons."
+                       Foreground="{StaticResource DimBrush}" FontSize="11" TextWrapping="Wrap"/>
+            <Button Content="Remove FlexPad…" Command="{Binding UninstallCommand}" HorizontalAlignment="Left"/>
+          </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </TabItem>
+
+  </TabControl>
+</Window>

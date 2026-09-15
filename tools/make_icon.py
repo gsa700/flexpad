@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Generate assets/flexpad.ico and assets/flexpad.png.
+"""Generate src/FlexPad.App/Assets/app.ico and app-icon.png.
 
 The icon is drawn in code rather than shipped as an opaque binary so anyone can
 see exactly what it is and regenerate it. Motif: a dark rounded plate with a
 2x2 grid of colored buttons, one of them lit - a button panel, mid-press.
 
 Requires Pillow (dev-time only; the outputs are committed so users never need
-this).
+this). The Linux installer embeds app-icon.png, the 256 px frame of app.ico.
 """
 
 import os
@@ -14,7 +14,7 @@ import os
 from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ASSETS = os.path.join(HERE, "..", "assets")
+ASSETS = os.path.join(HERE, "..", "src", "FlexPad.App", "Assets")
 
 # Draw huge, downscale for anti-aliasing.
 S = 1024
@@ -64,8 +64,8 @@ def draw_master():
 def main():
     os.makedirs(ASSETS, exist_ok=True)
     master = draw_master()
-    ico = os.path.join(ASSETS, "flexpad.ico")
-    png = os.path.join(ASSETS, "flexpad.png")
+    ico = os.path.join(ASSETS, "app.ico")
+    png = os.path.join(ASSETS, "app-icon.png")
     sizes = [16, 24, 32, 48, 64, 128, 256]
     master.save(ico, format="ICO", sizes=[(s, s) for s in sizes])
     master.resize((256, 256), Image.LANCZOS).save(png, format="PNG")

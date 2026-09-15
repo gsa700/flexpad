@@ -1,0 +1,64 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:FlexPad.App.ViewModels"
+        x:Class="FlexPad.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Width="620" Height="360" MinWidth="380" MinHeight="200"
+        Background="{StaticResource BgBrush}"
+        Icon="/Assets/app.ico"
+        Title="FlexPad">
+
+  <DockPanel Margin="12,10">
+
+    <!-- Header: the toolbar on its own row, then the status line at full width so a long one
+         wraps to two lines at most instead of stacking beside the buttons. -->
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
+      <TextBlock Grid.Row="0" Grid.Column="0" Text="FlexPad" FontSize="18" FontWeight="Bold"
+                 Foreground="{StaticResource AmberBrush}" VerticalAlignment="Center"/>
+      <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
+        <Button Content="+ Button" Click="OnAddClick"/>
+        <Button Content="Console" Click="OnConsoleClick"/>
+        <Button Content="Reference" Click="OnReferenceClick"/>
+        <Button Content="Setup" Click="OnSetupClick"/>
+      </StackPanel>
+      <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,0">
+        <Ellipse Width="10" Height="10" Fill="{Binding ConnBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+        <TextBlock Text="{Binding StatusText}" FontFamily="Consolas" FontSize="12"
+                   Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+      </StackPanel>
+    </Grid>
+
+    <!-- The grid. Each button fires its sequence; right-click edits it. -->
+    <ItemsControl ItemsSource="{Binding Buttons}" Margin="0,10,0,0">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <UniformGrid Columns="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).Columns}"/>
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:ButtonViewModel">
+          <Button Command="{Binding FireCommand}" Background="{Binding Background}" Foreground="{Binding Foreground}"
+                  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="3" MinHeight="52"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" CornerRadius="5">
+            <Button.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Edit…" Command="{Binding EditCommand}"/>
+                <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}"/>
+                <Separator/>
+                <MenuItem Header="Move earlier" Command="{Binding MoveEarlierCommand}"/>
+                <MenuItem Header="Move later" Command="{Binding MoveLaterCommand}"/>
+                <Separator/>
+                <MenuItem Header="Delete" Command="{Binding DeleteCommand}"/>
+              </ContextMenu>
+            </Button.ContextMenu>
+            <StackPanel>
+              <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" FontSize="14"/>
+              <TextBlock Text="{Binding Hotkey}" HorizontalAlignment="Center" FontSize="10" Opacity="0.75"
+                         IsVisible="{Binding HasHotkey}"/>
+            </StackPanel>
+          </Button>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </DockPanel>
+</Window>

@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FlexPad.App/FlexPad.App.csproj" />
+    <Project Path="src/FlexPad.Core/FlexPad.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FlexPad.Core.Tests/FlexPad.Core.Tests.csproj" />
+  </Folder>
+</Solution>

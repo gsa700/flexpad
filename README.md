@@ -1,27 +1,19 @@
-# flexpad
+# FlexPad
 
-Programmable buttons for a FlexRadio FLEX-6000 or FLEX-8000. Each button is a
-list of SmartSDR API commands that fire in order when you press it. Think of it
-as programmable telnet: the same text protocol you could type into port 4992
-by hand, with a button in front of it and a traffic log underneath.
+Programmable command buttons for a FlexRadio FLEX-6000 or FLEX-8000, and a home for the
+FlexControl knob when SmartSDR isn't running. Windows, Linux and Raspberry Pi.
 
-It talks to the radio directly over the network. SmartSDR does not need to be
-running, and nothing else (no Node-RED, no CAT, no Stream Deck) sits in
-between.
-
-It also drives a FlexControl USB tuning knob, so the knob keeps working when
-you operate from the radio's front panel with SmartSDR closed. See
-[FlexControl knob](#flexcontrol-knob).
+Each button is a list of SmartSDR API commands that fire in order when you press it: think of it as
+programmable telnet, the same text protocol you could type into port 4992 by hand, with a button in
+front of it and a console behind it. It talks to the radio directly over the network; SmartSDR does
+not need to be running and nothing else sits in between.
 
 ## Why
 
-SmartSDR memory channels store frequency, mode and filter, but not the RX and
-TX antenna ports. Recall a 2 m transverter memory from 20 m and you are on
-144.200 with ANT1 still selected instead of XVTA. The radio only applies its
-per-band antenna choice on a Band-button change, never on a retune, and a
-memory recall is a retune. Elecraft memories remember everything; these do not.
-
-flexpad makes a button that does the whole job:
+SmartSDR memory channels store frequency, mode and filter, but not the RX and TX antenna ports.
+Recall a 2 m transverter memory from 20 m and you are on 144.200 with ANT1 still selected instead
+of XVTA. The radio only applies its per-band antenna choice on a Band-button change, never on a
+retune, and a memory recall is a retune. FlexPad makes a button that does the whole job:
 
 ```
 slice tune {slice} 144.200
@@ -30,226 +22,84 @@ slice set {slice} rxant=XVTA txant=XVTA
 filt {slice} 150 2900
 ```
 
-Anything the API can do, a button can do: open a second slice on XVTB, move
-TX to a slice, load a profile, key an amplifier control, and so on.
+Anything the API can do, a button can do: open a second slice on XVTB, move TX to a slice, load a
+profile, and so on.
 
-## Setup
+## Features
 
-Requires Python 3.9 or newer. Standard library only, except pyserial for the
-optional FlexControl knob, which the installer adds.
+- **Buttons** in a grid you size in Setup. Right-click to edit, duplicate, reorder or delete.
+  Hotkeys (`F1`, `Ctrl+1`) work while the window has focus. Colours from a swatch palette.
+- **Capture slice**: set the radio up the way you want it, then capture the active slice as
+  commands. Basic takes frequency, mode, both antenna ports and the filter; Full adds tuning step,
+  AGC, noise tools, RF gain, DAX and TX power. A new button is labelled from the frequency and mode.
+- **Placeholders**: `{slice}` is the active slice, `{tx}` the transmit slice, `{A}`..`{H}` a slice
+  by letter, all resolved from the radio's live status. `wait 0.5` pauses; `#` starts a comment.
+- **FlexControl knob**: turning it tunes the active slice by its current tuning step; fast spins are
+  honoured. The knob button and the three aux buttons each have press, hold and double-click,
+  mapped in Setup to built-in actions (cycle the step, next slice, mute, TX to active) or to any
+  FlexPad button. Found by its USB id, so no other serial device is ever opened by mistake.
+- **Console** in its own window: every line to and from the radio, colour-coded, plus a command
+  line with history and a one-page **Reference** of the commands that matter.
+- **Setup → Updates**: in-app update from GitHub releases, a startup check if you want it, and
+  Remove.
 
-Windows:
+## Install
 
-```
-.\install.ps1
-```
+Download the zip for your platform from the [latest release](https://github.com/gsa700/flexpad/releases/latest),
+unzip, and run it. It offers to install itself; say yes and it copies itself to a per-user folder,
+adds Start Menu and desktop shortcuts (an applications-menu entry and a `flexpad` command on Linux),
+and relaunches from there.
 
-That copies the program to `%LOCALAPPDATA%\Programs\flexpad`, puts your
-settings in `%APPDATA%\flexpad` (creating `config.json` from the example if
-you don't have one), adds a Start Menu shortcut, and registers in Add/Remove
-Programs. Re-running it upgrades the program and never touches an existing
-config. `uninstall.ps1` removes all of that and keeps your settings unless you
-pass `-Purge`.
+| | Goes in | Appears in | Remove with |
+|---|---|---|---|
+| Windows | `%LOCALAPPDATA%\Programs\FlexPad` | Start Menu, desktop | Setup → Updates → Remove |
+| Linux / Pi | `~/.local/share/flexpad` | applications menu, desktop, `flexpad` on PATH | Setup → Updates → Remove, or `flexpad --uninstall` |
 
-Linux and macOS: `python3 flexpad.py`. Settings go in `~/.config/flexpad`
-(Linux) or `~/Library/Application Support/flexpad` (macOS). On Fedora you may
-need `sudo dnf install python3-tkinter`; on Debian, `python3-tk`.
+Don't want it installed? Put a file named `portable.txt` beside the program. It then runs where it
+stands and stops asking. Settings live in your profile either way.
 
-Portable or development use: create an empty file named `portable` beside
-`flexpad.py` and it keeps config, log and window state next to itself
-instead.
+On Windows it does **not** appear in Settings → Apps, on purpose: the app is unsigned, and Windows
+silently discards registry writes from unsigned programs started via Explorer. Removal lives inside
+the app instead.
 
-On first run the app discovers the radio on the LAN. If it can't (different
-subnet, VPN, SmartLink), put the address in **Setup...** or in `config.json`.
+Settings: `%APPDATA%\flexpad\config.json` on Windows, `~/.config/flexpad/config.json` on Linux. If
+you used the Python FlexPad, this reads the same file, buttons and all. You can edit the file by
+hand and press Reload in Setup.
 
-## Buttons
+## First run
 
-Right-click a button for Edit, Duplicate, Move and Delete. **+ Button** adds
-one. Everything lands in `config.json`, which you can also edit by hand; press
-**Reload** afterwards.
+On first run FlexPad finds the radio on the LAN. If it can't (different subnet, VPN, SmartLink), put
+the address in Setup → Radio. A fresh settings file comes with twelve buttons to start from: 2 m and
+70 cm on the transverter ports, 20 m and 40 m on ANT1, ANT1/ANT2/XVTA/XVTB antenna-only buttons,
+TX to A / B, a second receiver on 70 cm, and Close B. Transverter frequencies only tune if the XVTR
+band is defined in SmartSDR.
 
-The quickest way to make a button is to set the radio up the way you want it,
-then use **Capture slice** in the editor. It reads the active slice and writes
-the commands that recreate it. *Basic* captures frequency, mode, both antenna
-ports and the filter, which is what a memory channel stores plus the antennas
-SmartSDR's memories leave out. *Full* adds tuning step, AGC, noise reduction,
-noise blanker, wideband blanker, auto notch, RF gain, DAX channel and TX
-power. A new button gets a label like `14.250 USB` unless you have typed one.
-Everything captured is an ordinary command line you can edit or delete.
+The knob starts enabled and finds itself. Only one program can hold it: while SmartSDR is running
+the status line reads `knob COMx busy` until SmartSDR closes.
 
-The editor also has an **Insert example** menu that drops a ready-made snippet into
-the command list (tune plus mode plus antenna plus filter, antenna only, open
-a second slice, move TX, load a profile, and so on). **Reference** opens a
-one-page cheat sheet of the commands that matter for this job, shows the
-antenna ports your radio actually has, and links to FlexRadio's full API
-wiki at <https://github.com/flexradio/smartsdr-api-docs/wiki>.
+## Requirements
 
-The stock `config.example.json` gives you twelve buttons to start from: four
-band buttons (2 m and 70 cm on the transverter ports, 20 m and 40 m on ANT1),
-four antenna-only buttons (ANT1, ANT2, XVTA, XVTB for whichever slice is
-active), TX to A, TX to B, a second receiver on 70 cm, and Close B.
+None beyond the download: the executable is self-contained. Linux needs the user in the `dialout`
+group for the knob's serial port.
 
-A button has a label, an optional hotkey, an optional color, and a list of
-command lines:
+## Reporting a problem
 
-| line | meaning |
-|---|---|
-| `slice set {slice} rxant=XVTA` | sent to the radio after substitution |
-| `wait 0.5` | pause that many seconds |
-| `# anything` | comment, ignored |
+An unhandled error is written to `crash.log` beside the settings file, and Setup → Updates shows a
+notice with a button to reveal it. Attach it to an issue.
 
-Placeholders:
+## Build from source
 
-| placeholder | becomes |
-|---|---|
-| `{slice}` | index of the active slice (the one with the yellow flag in SmartSDR) |
-| `{tx}` | index of the transmit slice |
-| `{A}` .. `{H}` | index of the slice with that letter |
+Needs the .NET 10 SDK.
 
-Commands go out one at a time and each waits for the radio's reply. A non-zero
-reply code stops the sequence (turn off *Stop a sequence at the first error*
-in Setup to run on regardless). The sequence, every reply, and any error show
-in the log pane; errors are also written to `flexpad.log`.
-
-Hotkeys are plain names: `F1`, `ctrl+1`, `alt+shift+x`. They work while the
-flexpad window has focus. Colors are any Tk color: `#2d6a4f`, `darkred`.
-
-The command line at the bottom sends one command by hand, with the same
-placeholders and an up/down history. Tick *status traffic* to also see the
-radio's `S` status stream, which is noisy but is exactly what SmartSDR sees.
-
-## FlexControl knob
-
-If a FlexRadio FlexControl USB knob is plugged in, flexpad drives it, which
-matters when you operate from the radio's front panel and SmartSDR isn't
-running to own the knob. It needs pyserial, which the installer adds; without
-it the knob is simply off.
-
-- Turning the knob tunes the active slice by its current tuning step, the
-  same step SmartSDR and the front panel use. Fast spins are honored: the
-  knob reports how many ticks passed, and flexpad multiplies.
-- The knob button and the three aux buttons each have short press, hold,
-  and double-click events. **Knob...** in the toolbar maps each one to a
-  built-in action or to any of your flexpad buttons by label.
-
-Built-in actions:
-
-| action | does |
-|---|---|
-| `@step` | cycle the tuning step through the list in Knob... (default 10, 100, 1000, 10000 Hz) |
-| `@next-slice` | move the active flag to the next open slice |
-| `@mute` | toggle audio mute on the active slice |
-| `@tx` | make the active slice the transmit slice |
-
-Defaults: knob press cycles the step, hold moves to the next slice, double
-click mutes. The aux buttons start unbound; an unbound press shows in the log
-so you can see which is which. If clockwise tunes down on your unit, tick
-*Invert direction*.
-
-The knob is found by its USB id, so other serial devices are never opened by
-mistake. Only one program can hold it: when SmartSDR is running it takes the
-knob, and flexpad shows `knob COMx busy` until SmartSDR closes. The status
-line shows the port in use, the tuning step, and the active slice frequency.
-
-`python flexpad.py --knob` prints raw knob events without touching the radio,
-handy for checking direction and learning the button codes.
-
-A binding is just the button's label, so in `config.json` the section looks
-like this, with AUX1 firing the 2 m button and AUX2 the 70 cm one:
-
-```json
-"flexcontrol": {
-  "enabled": true,
-  "port": "",
-  "invert": false,
-  "steps": [10, 100, 1000, 10000],
-  "bindings": {
-    "S": "@step", "L": "@next-slice", "C": "@mute",
-    "X1S": "2m USB", "X2S": "70cm USB", "X3S": "20m USB",
-    "X1L": "@tx", "X2L": "", "X3L": "",
-    "X1C": "", "X2C": "", "X3C": ""
-  }
-}
+```sh
+dotnet build
+dotnet run --project src/FlexPad.App
+dotnet test
+dotnet publish src/FlexPad.App -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o publish/win-x64
 ```
 
-The codes are the knob's own: `S`, `L`, `C` for the knob button's press, hold
-and double click; `X1S`..`X3S`, `X1L`..`X3L`, `X1C`..`X3C` for the same on the
-three aux buttons.
-
-## Updates
-
-**Setup → Check for updates** asks GitHub for the latest release. If it is
-newer, flexpad offers to download and install it in place, then asks to
-restart. Your buttons and settings are in the settings folder and are never
-touched. Tick *Check for updates when flexpad starts* to be told about new
-releases at launch; that only notifies, installing is always a click. The
-status line and the log show when an update is waiting.
-
-Installing means downloading the release's source zip and swapping the
-program files in the program folder, since flexpad is plain files. A git
-checkout is never updated this way; use `git pull` there. The Add/Remove
-Programs version is kept in step automatically.
-
-`python flexpad.py --update` does the same from a terminal.
-
-## Command line
-
-```
-python flexpad.py --discover          list radios announcing on the LAN
-python flexpad.py --send "ant list"   one command, print the reply, exit
-python flexpad.py --run "2m USB"      fire a button headless (for scripts or a Stream Deck)
-python flexpad.py --knob              print FlexControl events, no radio needed (Ctrl+C to stop)
-python flexpad.py --update            install the latest release in place, if newer
-```
-
-`--run` returns exit code 1 if any command failed, so it is safe to chain.
-
-## API notes
-
-The useful commands for this job, all checked against a FLEX-8600M on
-SmartSDR v4. Frequencies are in MHz. The in-app Reference has the longer
-list.
-
-```
-slice tune <n> <MHz>                       retune
-slice set <n> mode=USB                     mode: USB LSB CW AM FM DIGU DIGL ...
-slice set <n> rxant=XVTA txant=XVTA        antenna ports; also ANT1 ANT2 XVTB RX_A RX_B
-slice set <n> tx=1                         make this the transmit slice
-slice set <n> active=1                     make this the active slice
-filt <n> <low> <high>                      RX filter edges in Hz (negative for LSB/CW-L)
-slice create freq=<MHz> ant=<port> mode=<m>  open a new slice
-slice remove <n>                           close one
-profile global load "<name>"               load a global profile
-ant list                                   see what ports this radio has
-```
-
-Transverter frequencies only tune if the XVTR band is defined in SmartSDR
-(Settings, Transverter). Without it the radio rejects the tune and the
-sequence stops there with the radio's reason in the log.
-
-## Implementation notes
-
-- One TCP session to port 4992, reconnecting on its own. Replies are matched
-  to commands by sequence number, so a slow reply never lands on the wrong
-  step.
-- The radio's slice status stream is merged into a table so the placeholders
-  and the status line are always current without polling.
-- Discovery listens for the radio's once-a-second UDP broadcast on port 4992
-  with `SO_REUSEADDR`, so it coexists with SmartSDR on the same PC.
-- Window geometry is kept in `ui_state.json`, not `config.json`, so UI state
-  never mixes with your settings. Both live in the settings folder, so the
-  program folder holds only the program and can be replaced on upgrade.
-- The process opts into DPI awareness on Windows so it renders crisp at 150%.
-- The FlexControl is a USB serial device, vendor `2192` product `0010`, at
-  9600 8N1. It speaks semicolon-terminated tokens with no line endings and
-  sends `F0304;` when a host opens it. `U` and `D` are single knob ticks,
-  `U03` means three ticks arrived in one USB poll. Verified on a real unit:
-  clockwise is `U`, the knob button sends `S`, `L`, `C`, and the aux buttons
-  `X1S`..`X3C`. flexpad reads whatever is waiting, sums the ticks, and sends
-  one `slice tune` per pass, so a fast spin never queues up behind the
-  radio's replies. It updates its own frequency cache before the radio's
-  status echo returns, so consecutive bursts build on each other.
+Full API reference for the commands: <https://github.com/flexradio/smartsdr-api-docs/wiki>.
 
 ## License
 
-GPL-3.0. See `LICENSE`.
+GPL-3.0. Written by David Erickson (AB0R) in collaboration with Claude.

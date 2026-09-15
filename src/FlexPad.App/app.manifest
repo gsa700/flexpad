@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
+  <assemblyIdentity version="1.0.0.0" name="FlexPad.app"/>
+
+  <!-- Declares the Windows versions this app supports. Standard hygiene, and it keeps Windows
+       from applying version-lie shims — but it does NOT do the one thing it was first added hoping
+       for. On 2026-09-04 the Program Compatibility Assistant was found attaching its
+       DetectorsAppHealth layer to this exe whenever it is launched through Explorer or by the
+       updater's helper. That layer virtualises every registry write — reg.exe's and in-process
+       RegSetValueEx alike, in the process and in any child it spawns, even one started with the
+       compat variable scrubbed — into an overlay that reads back consistently and is discarded on
+       exit. The installed-apps entry was written, verified, and lost, on every such launch since
+       July. This compatibility section was tested against that and made no difference: a fully
+       manifested probe launched from the Desktop got the layer just the same. What separated the
+       layered processes from the clean ones on that machine was an Authenticode signature. Full
+       account in BACKLOG. Kept because it is correct, not because it fixes that. -->
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <!-- Windows 10 and 11 -->
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
+      <!-- Windows 8.1 -->
+      <supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}"/>
+      <!-- Windows 8 -->
+      <supportedOS Id="{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}"/>
+      <!-- Windows 7 -->
+      <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"/>
+    </application>
+  </compatibility>
+
+  <!-- asInvoker: never elevate. The per-user install exists precisely so nothing here needs to, and
+       the in-app updater replaces the running exe in place, which would need elevation on every
+       update anywhere but %LOCALAPPDATA%. -->
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="asInvoker" uiAccess="false"/>
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">permonitorv2,permonitor</dpiAwareness>
+    </windowsSettings>
+  </application>
+</assembly>
