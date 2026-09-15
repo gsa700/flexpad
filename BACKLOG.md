@@ -2,9 +2,6 @@
 
 ## Open
 
-- **Knob on Linux.** Both Linux builds are verified (see Done) but no FlexControl has been plugged
-  into a Linux box yet: `KnobPort.FindLinux` matches the by-id name on the vendor string, and the
-  user must be in `dialout` (SerialErrors says so).
 - **Global hotkeys.** Hotkeys work while the FlexPad window has focus. A station operator usually
   has SmartSDR or a logger in front; system-wide hotkeys would need platform hooks.
 - **Headless flags.** The Python prototype had `--send`, `--run <label>` and `--knob` for scripts
@@ -23,3 +20,5 @@
   twelve buttons and the install offer; `--install --quiet` wrote the program, `.desktop`, icon and
   `~/.local/bin/flexpad`; the installed copy launched and connected; `--uninstall --quiet` removed
   all four and left the box clean. No crash log. The knob could not be tested there.
+- 2026-09-14: FlexControl plugged into the Fedora box; FlexPad found it by its by-id name and tuned
+  the radio. David: "picked it right up and works FB". Every feature is now verified on Linux.

@@ -123,7 +123,8 @@ ticks) is hidden unless the console's checkbox is on.
 - Radio: FLEX-8600M at 10.0.1.106 (AB0R), front-panel model. FlexControl on COM15 here.
 - **Cross-platform validated on real hardware: Windows, Fedora (linux-x64) and the CM5 kiosk
   (linux-arm64, 10.0.1.25, user `derickson`, SSH by the hambench_pi key), 2026-09-14.** On the Pi
-  the quiet install/uninstall pair round-tripped too. Only the knob on Linux is untested. Launch a
+  the quiet install/uninstall pair round-tripped too. The FlexControl was then plugged into the
+  Fedora box and found by `KnobPort.FindLinux` first time, so the knob is verified on Linux as well. Launch a
   GUI there from SSH inside the user session: `XDG_RUNTIME_DIR=/run/user/1000` +
   `systemd-run --user --unit=<name> --collect --quiet <exe>`; `grim` screenshots with
   `WAYLAND_DISPLAY=wayland-0`. Beware `pgrep -f` matching the SSH shell's own command line.
