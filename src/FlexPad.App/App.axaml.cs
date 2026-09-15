@@ -101,6 +101,11 @@ public partial class App : Application
                 else if (Environment.GetCommandLineArgs().Any(a => a.Equals("--bands", StringComparison.OrdinalIgnoreCase)))
                     Fire(MakeBandSetAsync, "band set");   // debug: open the band-set generator straight away
 
+                // Debug: exercise the update-restart exit path (every window closed by the app) without
+                // an update. Found the double-close that zeroed Setup's saved position, 2026-09-14.
+                if (Environment.GetCommandLineArgs().Any(a => a.Equals("--exit-for-update", StringComparison.OrdinalIgnoreCase)))
+                    _ = Task.Delay(4000).ContinueWith(_ => Avalonia.Threading.Dispatcher.UIThread.Post(ExitForUpdate));
+
                 if (_config.CheckUpdatesAtStartup)
                 {
                     await _setupVm.CheckUpdatesAsync();
@@ -181,6 +186,7 @@ public partial class App : Application
 
     public void NotifyBandSetClosing(Window w)
     {
+        if (!_memory.ContainsKey(w)) return;   // already recorded
         var p = Pos(w);
         _config.Window.BandSetX = p.X; _config.Window.BandSetY = p.Y;
         _memory.Remove(w);
@@ -212,6 +218,7 @@ public partial class App : Application
 
     public void NotifyConsoleClosing(ConsoleWindow w)
     {
+        if (!ReferenceEquals(_console, w)) return;   // already recorded: see NotifyMainWindowClosing
         var p = Pos(w);
         _config.Window.ConsoleX = p.X;
         _config.Window.ConsoleY = p.Y;
@@ -232,6 +239,7 @@ public partial class App : Application
     /// <summary>Dialogs record their own bounds on the way out, while the position is still real.</summary>
     public void NotifyEditorClosing(Window w)
     {
+        if (!_memory.ContainsKey(w)) return;   // already recorded
         var p = Pos(w);
         _config.Window.EditorX = p.X; _config.Window.EditorY = p.Y;
         _config.Window.EditorWidth = w.Width; _config.Window.EditorHeight = w.Height;
@@ -241,6 +249,7 @@ public partial class App : Application
 
     public void NotifyReferenceClosing(Window w)
     {
+        if (!_memory.ContainsKey(w)) return;   // already recorded
         var p = Pos(w);
         _config.Window.ReferenceX = p.X; _config.Window.ReferenceY = p.Y;
         _config.Window.ReferenceWidth = w.Width; _config.Window.ReferenceHeight = w.Height;
@@ -268,6 +277,7 @@ public partial class App : Application
     /// <summary>Setup applies its edits on close: connection, grid, knob.</summary>
     public void NotifySetupClosing(SetupWindow w)
     {
+        if (!ReferenceEquals(_setup, w)) return;   // already recorded: see NotifyMainWindowClosing
         var p = Pos(w);
         _config.Window.SetupX = p.X;
         _config.Window.SetupY = p.Y;
@@ -282,6 +292,12 @@ public partial class App : Application
 
     public void NotifyMainWindowClosing(MainWindow w)
     {
+        // Each of these can run twice: CloseAllWindows closes every window in a loop, but closing
+        // the main window already cascades to the others, so the second Close finds a window whose
+        // tracker is gone and whose Position reads (0,0) — which then overwrote the good value on
+        // every update restart (Setup came back at the top left after each update, 2026-09-14).
+        // A window we no longer hold has already been recorded; do nothing.
+        if (!ReferenceEquals(_main, w)) return;
         var p = Pos(w);
         _config.Window.X = p.X;
         _config.Window.Y = p.Y;

@@ -5,6 +5,16 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.6.2-beta] - 2026-09-14
+
+### Fixed
+- **Setup's position survives an update restart.** An update (and a Remove) closes every window in a
+  loop, but closing the main window already cascades to Setup and the console, so those were closed
+  twice; the second time their position tracker was gone and the fallback read of a closed window
+  gave (0,0), which overwrote the good value saved a moment earlier. Only the update path did this,
+  which is why a plain close and reopen looked fine. Each window's close handler now runs once.
+  Reproduced and verified with the new `--exit-for-update` debug switch.
+
 ## [0.6.1-beta] - 2026-09-14
 
 ### Added
