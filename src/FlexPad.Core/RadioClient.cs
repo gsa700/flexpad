@@ -98,12 +98,16 @@ public sealed partial class RadioClient : IDisposable
     {
         while (!_stop.IsSet)
         {
+            // Whatever goes wrong in a session, this thread lives on and reconnects: an escaped
+            // exception here is an unhandled exception on a background thread, which ends the
+            // process (0.7.0 died this way when the radio refused the connection while booting).
             try { Session(); }
-            catch (Exception ex) when (ex is IOException or SocketException or ObjectDisposedException)
+            catch (Exception ex)
             {
                 if (_stop.IsSet) break;
                 Error = ex.Message;
                 OnTraffic?.Invoke(Traffic.Note, $"connection lost: {ex.Message}");
+                StateChanged?.Invoke();
             }
             Close();
             if (_stop.IsSet) break;
@@ -127,8 +131,18 @@ public sealed partial class RadioClient : IDisposable
         }
         OnTraffic?.Invoke(Traffic.Note, $"connecting to {Host}:{Port}");
         var tcp = new TcpClient();
-        if (!tcp.ConnectAsync(Host, Port).Wait(TimeSpan.FromSeconds(10)))
-            throw new SocketException((int)SocketError.TimedOut);
+        try
+        {
+            if (!tcp.ConnectAsync(Host, Port).Wait(TimeSpan.FromSeconds(10)))
+                throw new SocketException((int)SocketError.TimedOut);
+        }
+        catch (AggregateException ae) when (ae.InnerException is { } inner)
+        {
+            // Task.Wait wraps the socket error ("connection refused" while the radio boots);
+            // surface the real one so the log line reads sensibly.
+            tcp.Dispose();
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(inner);
+        }
         var stream = tcp.GetStream();
         stream.ReadTimeout = 1000;
         _tcp = tcp;

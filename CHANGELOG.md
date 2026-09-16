@@ -5,6 +5,16 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.7.1-beta] - 2026-09-16
+
+### Fixed
+- **Crash when the radio refused the connection.** Power the radio off (or catch it booting) while
+  FlexPad is running and the connect attempt gets "connection refused"; `Task.Wait` wrapped that in
+  an `AggregateException` the reconnect loop did not catch, so the client thread died with an
+  unhandled exception and the app went with it (crash.log on David's PC, 2026-09-14 21:53, present
+  since 0.4.0). The client thread now survives any session error, logs `connection lost: …` with the
+  real message, and keeps retrying every five seconds. Regression test in `RadioClientTests`.
+
 ## [0.7.0-beta] - 2026-09-14
 
 ### Changed

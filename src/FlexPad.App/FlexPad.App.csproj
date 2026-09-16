@@ -10,7 +10,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <AssemblyName>FlexPad</AssemblyName>
-    <Version>0.7.0-beta</Version>
+    <Version>0.7.1-beta</Version>
     <Product>FlexPad</Product>
     <Authors>David Erickson (AB0R)</Authors>
     <ApplicationIcon>Assets/app.ico</ApplicationIcon>
