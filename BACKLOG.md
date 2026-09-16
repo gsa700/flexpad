@@ -46,3 +46,16 @@
   with it (present since 0.4.0, only ever run with the radio on before). Fixed in 0.7.1: the client
   thread survives any session error and keeps retrying; RadioClientTests covers it. David after
   updating both: "no crash with the radio off now".
+- 2026-09-16: 0.8.0-beta. Band buttons that only change band (`display pan set {pan} band=`, the
+  radio's persistence does the rest; transverters by index from `sub xvtr all`) and a broadcast set
+  (AM BC, shortwave, CB, WWV in AM) in place of the GEN button David first asked for, his own idea
+  once it turned out the radio has no GEN band in the API. David after updating both: "band buttons
+  work FB".
+
+## Ideas (asked about, not requested)
+
+- **Drag buttons to rearrange** (David, 2026-09-16: "don't do it now"). Feasible with Avalonia's
+  pointer events: press-and-move past a small threshold starts a drag (a plain click still fires
+  the button, right-click still opens the menu), drop on another button to take its slot, drop on
+  the band row or the main grid to change rows. Needs a Linux check (X11 fine, Wayland via
+  XWayland) and a look at touch on the Pi kiosk. Half a day including verification.
