@@ -57,3 +57,9 @@
   window (three drops and a plain click, config order checked). Not verified on Linux: under GNOME
   Wayland neither xdotool nor ydotool can move the pointer from an SSH session, so that is David's
   to try. Also found and fixed on the way: band-row hotkeys were never bound (since 0.6.1).
+- 2026-09-16: 0.9.1-beta. David confirmed drag on Windows and Fedora ("drag works FB") but "it's a
+  little hard to visualize what is happening": now a small ghost tile rides under the pointer, the
+  origin dims, the target button is outlined and empty row space is tinted. Two harness catches
+  before it shipped: the generated `DragLayer` field is null because MainWindow has its own
+  InitializeComponent (resolve with FindControl), and the ghost under the pointer swallowed the
+  drop hit test until the hit test skipped the overlay.
