@@ -56,3 +56,68 @@ public class BandSetTests
         Assert.Empty(BandSet.Generate(new[] { "23cm" }, "ANT1", "XVTA", "XVTB", false, false));
     }
 }
+
+public class BandChangeTests
+{
+    private static readonly Dictionary<string, string> Xvtrs = new(StringComparer.OrdinalIgnoreCase) { ["2m"] = "0", ["70cm"] = "1" };
+
+    [Fact]
+    public void One_pan_band_line_per_band_with_the_radios_codes()
+    {
+        var (set, skipped) = BandSet.GenerateBandChange(new[] { "70cm", "20m", "160m", "2m" }, Xvtrs, hotkeys: false);
+        Assert.Empty(skipped);
+        Assert.Equal(new[] { "160m", "20m", "2m", "70cm" }, set.Select(b => b.Label));
+        Assert.Equal(new[] { "display pan set {pan} band=160" }, set[0].Lines);
+        Assert.Equal(new[] { "display pan set {pan} band=20" }, set[1].Lines);
+        Assert.Equal(new[] { "display pan set {pan} band=x0" }, set[2].Lines);
+        Assert.Equal(new[] { "display pan set {pan} band=x1" }, set[3].Lines);
+        Assert.Equal(BandSet.TransverterColor, set[2].Color);
+        Assert.Null(set[1].Color);
+    }
+
+    [Fact]
+    public void Every_hf_band_has_a_code()
+    {
+        var (set, skipped) = BandSet.GenerateBandChange(BandSet.Bands.Select(b => b.Name), Xvtrs, hotkeys: true);
+        Assert.Empty(skipped);
+        Assert.Equal(12, set.Count);
+        Assert.Equal("F1", set[0].Key);
+        Assert.Equal("F12", set[11].Key);
+        Assert.All(set, b => Assert.Matches(@"^display pan set \{pan\} band=(x?\d+)$", Assert.Single(b.Lines)));
+    }
+
+    [Fact]
+    public void Transverter_band_the_radio_does_not_know_is_skipped_not_broken()
+    {
+        var (set, skipped) = BandSet.GenerateBandChange(new[] { "2m", "70cm", "6m" }, new Dictionary<string, string> { ["2M"] = "3" }, hotkeys: true);
+        Assert.Equal(new[] { "70cm" }, skipped);
+        Assert.Equal(new[] { "6m", "2m" }, set.Select(b => b.Label));
+        Assert.Equal("display pan set {pan} band=x3", set[1].Lines[0]);   // name matched regardless of case
+        Assert.Equal(new[] { "F1", "F2" }, set.Select(b => b.Key));      // no gap for the skipped band
+    }
+}
+
+public class BroadcastSetTests
+{
+    [Fact]
+    public void Broadcast_bands_are_am_recipes_on_the_hf_antenna_in_frequency_order()
+    {
+        var set = BandSet.GenerateBroadcast(new[] { "CB", "AM BC", "49m BC", "WWV" }, "ANT2", hotkeys: false);
+        Assert.Equal(new[] { "AM BC", "49m BC", "WWV", "CB" }, set.Select(b => b.Label));
+        Assert.Contains("slice tune {slice} 6.000000", set[1].Lines);
+        Assert.Contains("slice set {slice} mode=AM", set[1].Lines);
+        Assert.Contains("slice set {slice} rxant=ANT2 txant=ANT2", set[1].Lines);
+        Assert.Contains("filt {slice} -3000 3000", set[1].Lines);
+        Assert.Contains("slice tune {slice} 27.185000", set[3].Lines);
+        Assert.All(set, b => Assert.Equal(BandSet.BroadcastColor, b.Color));
+    }
+
+    [Fact]
+    public void Broadcast_labels_do_not_collide_with_amateur_labels()
+    {
+        var amateur = BandSet.Bands.Select(b => b.Name).ToHashSet();
+        Assert.All(BandSet.Broadcast, b => Assert.DoesNotContain(b.Name, amateur));
+        Assert.Equal(BandSet.Broadcast.Length, BandSet.Broadcast.Select(b => b.Name).Distinct().Count());
+        Assert.True(BandSet.Broadcast.Zip(BandSet.Broadcast.Skip(1)).All(p => p.First.PhoneMhz < p.Second.PhoneMhz));
+    }
+}

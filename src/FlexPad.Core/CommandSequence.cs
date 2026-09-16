@@ -14,12 +14,13 @@ public readonly record struct SequenceLine(LineType Type, string Command, double
 
 /// <summary>
 /// The button language: one command per line, <c>#</c> comments, <c>wait N</c> pauses, and the
-/// placeholders <c>{slice}</c> (active slice index), <c>{tx}</c> (transmit slice) and
-/// <c>{A}</c>..<c>{H}</c> (slice by letter). Pure, so every rule here is unit-tested.
+/// placeholders <c>{slice}</c> (active slice index), <c>{tx}</c> (transmit slice),
+/// <c>{A}</c>..<c>{H}</c> (slice by letter) and <c>{pan}</c> (the active slice's panadapter
+/// handle, for <c>display pan set {pan} band=20</c>). Pure, so every rule here is unit-tested.
 /// </summary>
 public static partial class CommandSequence
 {
-    [GeneratedRegex(@"\{(slice|tx|[A-H])\}")]
+    [GeneratedRegex(@"\{(slice|tx|pan|[A-H])\}")]
     private static partial Regex Placeholder();
 
     public static SequenceLine Classify(string raw)
@@ -43,6 +44,13 @@ public static partial class CommandSequence
         return Placeholder().Replace(command, m =>
         {
             var key = m.Groups[1].Value;
+            if (key == "pan")
+            {
+                var active = slices.Active() ?? throw new SequenceException("no active slice - cannot fill {pan}");
+                var attrs = slices.Get(active);
+                if (attrs is not null && attrs.TryGetValue("pan", out var pan) && pan.Length > 0) return pan;
+                throw new SequenceException("active slice has no panadapter - cannot fill {pan}");
+            }
             var (idx, what) = key switch
             {
                 "slice" => (slices.Active(), "no active slice"),

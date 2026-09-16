@@ -6,7 +6,7 @@ radio; a FlexControl USB knob tunes the active slice and its buttons map to acti
 buttons. Exists because SmartSDR memories cannot store RX/TX antenna ports, which matters for
 transverters on XVTA/XVTB, and because the FlexControl only works while SmartSDR is running.
 **.NET 10 + Avalonia 12.1**, MVVM. Windows / Linux / Raspberry Pi (arm64). GPLv3. By David
-Erickson (AB0R). Status: **0.7.1-beta**.
+Erickson (AB0R). Status: **0.8.0-beta**.
 
 Fourth app in the station-tools family. **LP-100A Monitor** (`~/Documents/Programming/lp100a-monitor`)
 is the family's reference template and **W2 Monitor** (`~/Documents/Programming/w2-monitor-x`) its
@@ -78,7 +78,7 @@ Avalonia shell. Put new parsing/decision logic in Core with tests, not in view-m
   `S<handle>|<object> key=value…` status after `sub slice all` / `sub tx all`.
 - **Slice status is incremental** — a retune sends `RF_frequency` alone — so `SliceTable.Merge`
   merges, never replaces. Placeholders resolve from it: `{slice}` = `active=1`, `{tx}` = `tx=1`,
-  `{A}`..`{H}` = `index_letter`.
+  `{A}`..`{H}` = `index_letter`, `{pan}` = the active slice's `pan` handle (for `display pan set {pan} band=20`, which the radio completes from band persistence; transverter bands are `band=x<index>` from `sub xvtr all`; no band exists for general coverage, `band=gen` is refused).
 - Commands verified by sending each with the radio's current value (a no-op the radio accepts or
   rejects): `slice tune`, `slice set … mode= rxant= txant= step= agc_mode= agc_threshold= nr= nr_level=
   nb= nb_level= wnb= wnb_level= anf= rfgain= dax= audio_mute= audio_level= audio_pan=`, `filt`,

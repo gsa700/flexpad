@@ -5,6 +5,26 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.8.0-beta] - 2026-09-16
+
+### Added
+- **Band buttons that only change band.** The band-set generator's amateur set now defaults to
+  "change band only": each button is one line, `display pan set {pan} band=20`, and the radio
+  brings back the frequency, mode, filter and both antenna ports it last had on that band, exactly
+  like the front-panel band buttons (band persistence; verified live on the 8600M: 80 m → 20 m →
+  2 m → 80 m came back to 3.925 LSB ANT1/ANT1 to the hertz). Transverter bands use the radio's own
+  index for the band (`band=x0`), read from `sub xvtr all` and matched by name; a band the radio has
+  no transverter entry for is skipped with a console note. Untick the option for the old full
+  recipe. (David: "each band button is essentially the same as a regular button", 2026-09-16.)
+- **Broadcast set** in the generator: AM broadcast, the shortwave broadcast bands from 120 m to
+  11 m, 11 m CB (channel 19) and WWV, each a full recipe in AM on the HF antenna. General coverage
+  has no band of its own on the radio (`band=gen` is refused), so these are always recipes. Brown
+  buttons, in the band row by default. (David's idea, in place of a GEN button.)
+- `{pan}` placeholder: the active slice's panadapter handle.
+
+### Changed
+- The radio client follows the transverter list (`sub xvtr all`).
+
 ## [0.7.1-beta] - 2026-09-16
 
 ### Fixed

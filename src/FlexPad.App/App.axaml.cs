@@ -156,7 +156,7 @@ public partial class App : Application
         Track(win);
         if (!await win.ShowDialog<bool>(_main)) return;
 
-        var made = vm.Generate();
+        var (made, skipped) = vm.Generate();
         var added = 0; var replaced = 0;
         foreach (var g in made)
         {
@@ -180,6 +180,8 @@ public partial class App : Application
         SaveConfig();
         RebuildButtons();
         _radio.Note($"band set: {added} button(s) added, {replaced} replaced");
+        if (skipped.Count > 0)
+            _radio.Note($"band set: skipped {string.Join(", ", skipped)} - the radio has no transverter band by that name (define it in SmartSDR, or use a full recipe)");
     }
 
     public void OpenBandSet() => Fire(MakeBandSetAsync, "band set");

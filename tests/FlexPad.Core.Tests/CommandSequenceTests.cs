@@ -48,6 +48,20 @@ public class CommandSequenceTests
         var empty = new SliceTable();
         Assert.Contains("no active slice", Assert.Throws<SequenceException>(() => CommandSequence.Substitute("x {slice}", empty)).Message);
         Assert.Contains("no transmit slice", Assert.Throws<SequenceException>(() => CommandSequence.Substitute("x {tx}", empty)).Message);
+        Assert.Contains("no active slice", Assert.Throws<SequenceException>(() => CommandSequence.Substitute("display pan set {pan} band=20", empty)).Message);
+    }
+
+    [Fact]
+    public void Pan_is_the_active_slices_panadapter_handle()
+    {
+        var t = new SliceTable();
+        t.Merge("slice 0 in_use=1 active=0 pan=0x40000000");
+        t.Merge("slice 1 in_use=1 active=1 pan=0x40000001");
+        Assert.Equal("display pan set 0x40000001 band=x0", CommandSequence.Substitute("display pan set {pan} band=x0", t));
+
+        var noPan = new SliceTable();
+        noPan.Merge("slice 0 in_use=1 active=1");
+        Assert.Contains("no panadapter", Assert.Throws<SequenceException>(() => CommandSequence.Substitute("{pan}", noPan)).Message);
     }
 
     [Fact]

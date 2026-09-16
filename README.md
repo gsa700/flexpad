@@ -29,10 +29,13 @@ profile, and so on.
 
 - **Buttons** in a grid you size in Setup. Right-click to edit, duplicate, reorder or delete.
   Hotkeys (`F1`, `Ctrl+1`) work while the window has focus. Colours from a swatch palette.
-- **Band set**: + Button → Band set… makes a button per band in one go, 160 m to 70 cm, at each
-  band's usual spot with your antenna choices for HF and the transverter ports, phone or CW. They
-  go in their own row along the bottom of the window; any button can be moved into or out of that
-  row from the editor.
+- **Band set**: + Button → Band set… makes a button per band in one go. The amateur set, 160 m to
+  70 cm, defaults to *change band only*: one command, and the radio brings back the frequency,
+  mode, filter and antenna ports it last had on that band, like the front-panel band buttons.
+  Or untick it for a full recipe at each band's usual spot with your antenna choices for HF and the
+  transverter ports, phone or CW. A second set covers AM broadcast, the shortwave broadcast bands,
+  11 m CB and WWV, in AM. They go in their own row along the bottom of the window; any button can
+  be moved into or out of that row from the editor.
 - **Build from choices**: in the editor, pick frequency, mode, RX and TX antenna, filter and step
   from lists the radio itself reports, press Build, and the command lines appear, ready to save or
   tweak. No command knowledge needed.
@@ -40,7 +43,8 @@ profile, and so on.
   commands. Basic takes frequency, mode, both antenna ports and the filter; Full adds tuning step,
   AGC, noise tools, RF gain, DAX and TX power. A new button is labelled from the frequency and mode.
 - **Placeholders**: `{slice}` is the active slice, `{tx}` the transmit slice, `{A}`..`{H}` a slice
-  by letter, all resolved from the radio's live status. `wait 0.5` pauses; `#` starts a comment.
+  by letter, `{pan}` the active slice's panadapter (for `display pan set {pan} band=20`), all
+  resolved from the radio's live status. `wait 0.5` pauses; `#` starts a comment.
 - **FlexControl knob**: turning it tunes the active slice by its current tuning step; fast spins are
   honoured. The knob button and the three aux buttons each have press, hold and double-click,
   mapped in Setup to radio functions: cycle the tuning step, next slice, mute, TX on this slice,

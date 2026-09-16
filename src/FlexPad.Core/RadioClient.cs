@@ -58,6 +58,18 @@ public sealed partial class RadioClient : IDisposable
     public ConcurrentDictionary<string, string> Atu { get; } = new();
     /// <summary>Amplifier objects by handle (Power Genius, Tuner Genius): merged attributes.</summary>
     public ConcurrentDictionary<string, ConcurrentDictionary<string, string>> Amplifiers { get; } = new();
+    /// <summary>Transverter bands by index (<c>xvtr 0 name=2m rf_freq=144 …</c>): the index is what
+    /// <c>display pan set … band=x0</c> takes.</summary>
+    public ConcurrentDictionary<string, ConcurrentDictionary<string, string>> Xvtrs { get; } = new();
+
+    /// <summary>Transverter band index by name, for the band-set generator.</summary>
+    public Dictionary<string, string> XvtrIndexByName()
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (index, attrs) in Xvtrs)
+            if (attrs.TryGetValue("name", out var name) && name.Length > 0) map[name] = index;
+        return map;
+    }
 
     public event Action<Traffic, string>? OnTraffic;
     public event Action? StateChanged;
@@ -152,6 +164,7 @@ public sealed partial class RadioClient : IDisposable
         Interlock.Clear();
         Atu.Clear();
         Amplifiers.Clear();
+        Xvtrs.Clear();
         Error = null;
         Connected = true;
         StateChanged?.Invoke();
@@ -161,6 +174,7 @@ public sealed partial class RadioClient : IDisposable
         Send("sub amplifier all", wait: false);
         Send("sub interlock all", wait: false);
         Send("sub atu all", wait: false);
+        Send("sub xvtr all", wait: false);
         // Ask who we're talking to. Off this thread, because Send waits for a reply that only this
         // thread's read loop can deliver.
         Task.Run(() =>
@@ -227,14 +241,9 @@ public sealed partial class RadioClient : IDisposable
                 else if (p.Text.StartsWith("atu ", StringComparison.Ordinal))
                     foreach (var (k, v) in FlexProtocol.KeyValues(p.Text[4..])) Atu[k] = v;
                 else if (p.Text.StartsWith("amplifier ", StringComparison.Ordinal))
-                {
-                    // amplifier <handle> key=value...  - incremental like slices, so merge per handle.
-                    var rest = p.Text[10..];
-                    var sp = rest.IndexOf(' ');
-                    var handle = sp < 0 ? rest : rest[..sp];
-                    var attrs = Amplifiers.GetOrAdd(handle, _ => new ConcurrentDictionary<string, string>());
-                    if (sp >= 0) foreach (var (k, v) in FlexProtocol.KeyValues(rest[(sp + 1)..])) attrs[k] = v;
-                }
+                    MergeKeyed(Amplifiers, p.Text[10..]);   // amplifier <handle> key=value... - incremental like slices
+                else if (p.Text.StartsWith("xvtr ", StringComparison.Ordinal))
+                    MergeKeyed(Xvtrs, p.Text[5..]);          // xvtr <index> name=2m rf_freq=144 ...
                 break;
             case LineKind.Version:
                 Version = p.Text;
@@ -248,6 +257,15 @@ public sealed partial class RadioClient : IDisposable
                 OnTraffic?.Invoke(Traffic.Received, line);
                 break;
         }
+    }
+
+    /// <summary>Merge <c>&lt;key&gt; k=v k=v…</c> into a per-key attribute table.</summary>
+    private static void MergeKeyed(ConcurrentDictionary<string, ConcurrentDictionary<string, string>> table, string rest)
+    {
+        var sp = rest.IndexOf(' ');
+        var key = sp < 0 ? rest : rest[..sp];
+        var attrs = table.GetOrAdd(key, _ => new ConcurrentDictionary<string, string>());
+        if (sp >= 0) foreach (var (k, v) in FlexProtocol.KeyValues(rest[(sp + 1)..])) attrs[k] = v;
     }
 
     /// <summary>Send one command and wait for its reply. Code 0 is success.</summary>

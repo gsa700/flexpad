@@ -33,7 +33,7 @@ public static class Reference
     public const string Text = """
         FLEXPAD QUICK REFERENCE          SmartSDR TCP/IP API, frequencies in MHz
 
-        Placeholders   {slice} active slice    {tx} transmit slice    {A}..{H} slice by letter
+        Placeholders   {slice} active slice    {tx} transmit slice    {A}..{H} slice by letter    {pan} active slice's panadapter
         Other lines    wait 0.5  pauses        # starts a comment
 
         TUNING AND MODE
