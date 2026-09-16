@@ -27,8 +27,9 @@ profile, and so on.
 
 ## Features
 
-- **Buttons** in a grid you size in Setup. Right-click to edit, duplicate, reorder or delete.
-  Hotkeys (`F1`, `Ctrl+1`) work while the window has focus. Colours from a swatch palette.
+- **Buttons** in a grid you size in Setup. Drag one onto another to rearrange, or onto empty space
+  in a row to move it there. Right-click to edit, duplicate, reorder or delete. Hotkeys (`F1`,
+  `Ctrl+1`) work while the window has focus. Colours from a swatch palette.
 - **Band set**: + Button → Band set… makes a button per band in one go. The amateur set, 160 m to
   70 cm, defaults to *change band only*: one command, and the radio brings back the frequency,
   mode, filter and antenna ports it last had on that band, like the front-panel band buttons.

@@ -5,6 +5,20 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.9.0-beta] - 2026-09-16
+
+### Added
+- **Drag buttons to rearrange.** Press a button, move it, and drop it on another button to take
+  that slot; the others shift over. Drop it on empty space in the grid or the band row to send it
+  to the end of that row, which is also how a button changes rows by hand. A plain click still
+  fires the button and right-click still opens the menu; nothing happens until the pointer has
+  moved a few pixels, and the release that ends a drag never fires anything. "Move earlier" and
+  "Move later" stay in the menu. (David, 2026-09-16.)
+
+### Fixed
+- Hotkeys on buttons in the band row did nothing: the key bindings were built from the main grid
+  only, so the band-set generator's F-keys were dead since 0.6.1.
+
 ## [0.8.0-beta] - 2026-09-16
 
 ### Added

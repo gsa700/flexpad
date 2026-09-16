@@ -109,6 +109,24 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         Changed?.Invoke();
     }
 
+    /// <summary>Drag-and-drop: <paramref name="item"/> takes <paramref name="target"/>'s slot and row.</summary>
+    public void DropOnto(ButtonConfig item, ButtonConfig target)
+    {
+        if (ReferenceEquals(item, target)) return;
+        var changed = ListMoves.MoveOnto(_config().Buttons, item, target);
+        if (item.Group != target.Group) { item.Group = target.Group; changed = true; }
+        if (changed) Changed?.Invoke();
+    }
+
+    /// <summary>Drag-and-drop onto empty space in a row: <paramref name="item"/> goes to that row's end.</summary>
+    public void DropInto(ButtonConfig item, bool bandRow)
+    {
+        var changed = ListMoves.MoveToEnd(_config().Buttons, item);
+        var group = bandRow ? ButtonConfig.BandGroup : null;
+        if (item.Group != group) { item.Group = group; changed = true; }
+        if (changed) Changed?.Invoke();
+    }
+
     /// <summary>The button list changed; the App saves and rebuilds.</summary>
     public event Action? Changed;
 
