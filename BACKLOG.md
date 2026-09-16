@@ -62,4 +62,5 @@
   origin dims, the target button is outlined and empty row space is tinted. Two harness catches
   before it shipped: the generated `DragLayer` field is null because MainWindow has its own
   InitializeComponent (resolve with FindControl), and the ghost under the pointer swallowed the
-  drop hit test until the hit test skipped the overlay.
+  drop hit test until the hit test skipped the overlay. David: "that's perfect... totally clear what
+  is happening".
