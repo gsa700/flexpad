@@ -39,3 +39,10 @@
   position bug: Setup zeroed only on update restarts because CloseAllWindows double-closed it.
   Reproduced with `--exit-for-update`, guarded, confirmed by David on both boxes: "setup position
   sticks now on windows and fedora".
+- 2026-09-16: 0.7.0–0.7.1-beta. FlexControl buttons bind to twenty radio functions (no frequency
+  presets in the picker). Then the first crash David saw with 0.7.0, on Windows and Fedora alike:
+  the radio was off, the connect got "connection refused", and Task.Wait wrapped it in an
+  AggregateException the reconnect loop's filter missed, so the client thread died and the process
+  with it (present since 0.4.0, only ever run with the radio on before). Fixed in 0.7.1: the client
+  thread survives any session error and keeps retrying; RadioClientTests covers it. David after
+  updating both: "no crash with the radio off now".
