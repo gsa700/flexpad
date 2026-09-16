@@ -64,3 +64,8 @@
   InitializeComponent (resolve with FindControl), and the ghost under the pointer swallowed the
   drop hit test until the hit test skipped the overlay. David: "that's perfect... totally clear what
   is happening".
+- 2026-09-16: 0.9.2-beta. README screenshots (David's suggestion) under docs/screenshots, taken
+  from the debug build with a sample config through `shots_readme.ps1` in the session scratchpad
+  (PostMessage clicks for Build and the drag frame; chassis serial painted over in the console shot
+  before publishing). Taking them showed `sub interlock all` is rejected by the radio on every
+  connect, so it's gone; interlock status rides on `sub tx all`.
