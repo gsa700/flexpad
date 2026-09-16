@@ -51,11 +51,9 @@
   (AM BC, shortwave, CB, WWV in AM) in place of the GEN button David first asked for, his own idea
   once it turned out the radio has no GEN band in the API. David after updating both: "band buttons
   work FB".
-
-## Ideas (asked about, not requested)
-
-- **Drag buttons to rearrange** (David, 2026-09-16: "don't do it now"). Feasible with Avalonia's
-  pointer events: press-and-move past a small threshold starts a drag (a plain click still fires
-  the button, right-click still opens the menu), drop on another button to take its slot, drop on
-  the band row or the main grid to change rows. Needs a Linux check (X11 fine, Wayland via
-  XWayland) and a look at touch on the Pi kiosk. Half a day including verification.
+- 2026-09-16: 0.9.0-beta. Drag buttons to rearrange, asked for the same afternoon after "don't do
+  it now" ("the pi kiosk isn't touch so build it the same as the rest"). Pointer events and a hit
+  test in the main window, ListMoves in Core. Verified on Windows by posting mouse messages to the
+  window (three drops and a plain click, config order checked). Not verified on Linux: under GNOME
+  Wayland neither xdotool nor ydotool can move the pointer from an SSH session, so that is David's
+  to try. Also found and fixed on the way: band-row hotkeys were never bound (since 0.6.1).
