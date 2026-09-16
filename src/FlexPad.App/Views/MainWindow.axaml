@@ -8,6 +8,7 @@
         Icon="/Assets/app.ico"
         Title="FlexPad">
 
+  <Panel>
   <DockPanel Margin="12,10">
 
     <!-- Header, one line: two dots (radio, knob — hover for the address and port), the slice
@@ -109,4 +110,8 @@
       </ItemsControl.ItemTemplate>
     </ItemsControl>
   </DockPanel>
+
+  <!-- Drag ghost lives here, above everything, never hit-tested (code-behind). -->
+  <Canvas x:Name="DragLayer" IsHitTestVisible="False"/>
+  </Panel>
 </Window>

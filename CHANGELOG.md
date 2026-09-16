@@ -5,6 +5,13 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.9.1-beta] - 2026-09-16
+
+### Changed
+- **You can see a drag now.** A ghost of the button rides under the pointer, the original dims to
+  a hole, the button the drop would take the place of gets an outline, and empty row space that
+  would take it gets a tint. (David: "a little hard to visualize what is happening", 2026-09-16.)
+
 ## [0.9.0-beta] - 2026-09-16
 
 ### Added
