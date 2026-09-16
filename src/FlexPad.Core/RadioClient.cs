@@ -172,7 +172,7 @@ public sealed partial class RadioClient : IDisposable
         Send("sub slice all", wait: false);
         Send("sub tx all", wait: false);
         Send("sub amplifier all", wait: false);
-        Send("sub interlock all", wait: false);
+        // No `sub interlock all`: the radio rejects the object name (500000A3); interlock status rides on `sub tx all`.
         Send("sub atu all", wait: false);
         Send("sub xvtr all", wait: false);
         // Ask who we're talking to. Off this thread, because Send waits for a reply that only this

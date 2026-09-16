@@ -25,6 +25,8 @@ filt {slice} 150 2900
 Anything the API can do, a button can do: open a second slice on XVTB, move TX to a slice, load a
 profile, and so on.
 
+![FlexPad main window: a grid of command buttons and a row of band buttons along the bottom](docs/screenshots/main.png)
+
 ## Features
 
 - **Buttons** in a grid you size in Setup. Drag one onto another to rearrange, or onto empty space
@@ -57,6 +59,29 @@ profile, and so on.
   line with history and a one-page **Reference** of the commands that matter.
 - **Setup → Updates**: in-app update from GitHub releases, a startup check if you want it, and
   Remove.
+
+## Screenshots
+
+Dragging a button to a new slot: a ghost rides under the pointer, the origin dims, the target is
+outlined.
+
+![Dragging a button onto another](docs/screenshots/drag.png)
+
+The editor after pressing Build: the choices came from the radio, the commands are ready to save.
+
+![Button editor with Build from choices](docs/screenshots/editor.png)
+
+The band-set generator, amateur set, "change band only".
+
+![Band set generator](docs/screenshots/bandset.png)
+
+The console: every line to and from the radio, and a command line.
+
+![Console window](docs/screenshots/console.png)
+
+Setup, Knob tab: the FlexControl's buttons mapped to radio functions.
+
+![Setup, Knob tab](docs/screenshots/setup-knob.png)
 
 ## Install
 

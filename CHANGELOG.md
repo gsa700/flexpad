@@ -5,6 +5,16 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.9.2-beta] - 2026-09-16
+
+### Fixed
+- The console no longer shows `Invalid subscription object name` on every connect: `sub interlock
+  all` is not a subscription the radio knows, and interlock status arrives with `sub tx all` anyway.
+
+### Docs
+- README screenshots (Windows, 150 % scaling): main window with a band row, a drag in progress, the
+  editor after Build, the band-set generator, the console, Setup's Knob tab.
+
 ## [0.9.1-beta] - 2026-09-16
 
 ### Changed
