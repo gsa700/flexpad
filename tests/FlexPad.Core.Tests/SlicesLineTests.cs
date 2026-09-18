@@ -14,6 +14,10 @@ internal sealed class FakeRadio
     public List<string> Sent { get; } = new();
     public int MaxSlices { get; init; } = 4;
 
+    /// <summary>Like the 8600M front panel in single-slice view: a new slice on a frequency another slice
+    /// already has (same panadapter) is accepted and then closed again at once.</summary>
+    public bool ClosesSamePanSlices { get; init; }
+
     public FakeRadio(params string[] letters)
     {
         foreach (var l in letters) Open(l, "14.100000", "ANT1", "USB");
@@ -43,7 +47,10 @@ internal sealed class FakeRadio
             var kv = cmd[13..].Split(' ').Select(p => p.Split('=')).ToDictionary(p => p[0], p => p[1]);
             var have = Slices.Live().Select(i => Slices.Get(i)!["index_letter"]).ToHashSet();
             var letter = "ABCDEFGH".Select(c => c.ToString()).First(l => !have.Contains(l));
-            return (0, Open(letter, kv["freq"], kv["ant"], kv["mode"]));
+            var samePan = Slices.Live().Any(i => Slices.Get(i)!["RF_frequency"] == kv["freq"]);
+            var idx = Open(letter, kv["freq"], kv["ant"], kv["mode"]);
+            if (ClosesSamePanSlices && samePan) Slices.Merge($"slice {idx} in_use=0 active=0");
+            return (0, idx);
         }
         return (0, "");
     }
@@ -69,15 +76,66 @@ public class SlicesLineTests
     }
 
     [Fact]
-    public void Opens_a_missing_slice_as_a_copy_of_the_active_one_then_the_letter_resolves()
+    public void A_slice_the_button_never_tunes_still_opens_as_a_copy_of_the_active_one()
+    {
+        var r = new FakeRadio("A");
+        r.Slices.Merge("slice 0 RF_frequency=3.925000 rxant=ANT2 mode=LSB");
+        var errors = new List<string>();
+        Assert.True(Run(r, errors, "slices A B", "slice set {B} tx=1"));
+        Assert.Empty(errors);
+        Assert.Equal("AB", r.Letters());
+        Assert.Equal(new[] { "slice create freq=3.925000 ant=ANT2 mode=LSB", "slice set 1 tx=1" }, r.Sent);
+    }
+
+    [Fact]
+    public void A_tune_line_alone_aims_the_new_slice_and_the_rest_comes_from_the_active_one()
     {
         var r = new FakeRadio("A");
         r.Slices.Merge("slice 0 RF_frequency=3.925000 rxant=ANT2 mode=LSB");
         var errors = new List<string>();
         Assert.True(Run(r, errors, "slices A B", "slice tune {B} 14.250"));
         Assert.Empty(errors);
+        Assert.Equal(new[] { "slice create freq=14.250 ant=ANT2 mode=LSB", "slice tune 1 14.250" }, r.Sent);
+    }
+
+    [Fact]
+    public void A_missing_slice_is_opened_where_the_button_is_about_to_put_it()
+    {
+        // David's "VHF & UHF" button, 2026-09-19: B must be opened on 432 MHz with XVTB, not as a copy of A.
+        var r = new FakeRadio("A") { ClosesSamePanSlices = true };
+        var errors = new List<string>();
+        Assert.True(Run(r, errors,
+            "slices A B",
+            "slice tune {A} 144.200000", "slice set {A} mode=USB", "slice set {A} rxant=XVTA txant=XVTA",
+            "slice tune {B} 432.194700", "slice set {B} mode=USB", "slice set {B} rxant=XVTB txant=XVTB"));
+        Assert.Empty(errors);
         Assert.Equal("AB", r.Letters());
-        Assert.Equal(new[] { "slice create freq=3.925000 ant=ANT2 mode=LSB", "slice tune 1 14.250" }, r.Sent);
+        Assert.Equal("slice create freq=432.194700 ant=XVTB mode=USB", r.Sent[0]);
+        Assert.Contains("slice tune 1 432.194700", r.Sent);
+    }
+
+    [Fact]
+    public void A_slice_the_radio_closes_again_stops_the_button_at_once_with_the_reason()
+    {
+        var r = new FakeRadio("A") { ClosesSamePanSlices = true };
+        var errors = new List<string>();
+        Assert.False(Run(r, errors, "slices A B", "slice set {B} mode=USB"));   // no tune line: nothing to aim the new slice with
+        Assert.Equal(1, r.Sent.Count(c => c.StartsWith("slice create")));       // no blind retries
+        Assert.Contains("closed it again", Assert.Single(errors));
+        Assert.DoesNotContain(r.Sent, c => c.StartsWith("slice set"));
+    }
+
+    [Fact]
+    public void Hints_take_the_first_tune_mode_and_rx_antenna_per_letter()
+    {
+        var h = CommandSequence.HintsFrom(new[]
+        {
+            "# comment", "slice tune {slice} 7.1", "slice tune {B} 432.1", "slice t {B} 10.0",
+            "slice set {B} mode=USB nr=1", "slice set {B} rxant=XVTB txant=XVTA", "slice s {C} rxant=ANT2",
+        });
+        Assert.Equal(new CommandSequence.SliceHint("432.1", "XVTB", "USB"), h["B"]);
+        Assert.Equal(new CommandSequence.SliceHint(null, "ANT2", null), h["C"]);
+        Assert.False(h.ContainsKey("A"));
     }
 
     [Fact]

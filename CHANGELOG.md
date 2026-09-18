@@ -5,6 +5,18 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.12.2-beta] - 2026-09-19
+
+### Fixed
+- **An all-slices button now opens its second slice from single-slice operation.** A `slices A B`
+  line used to open a missing slice as a copy of the active one. A FLEX-8600M with its front panel
+  in single-slice view accepts that slice, on the same frequency in the same panadapter, and closes
+  it again 80 ms later, so the button stopped with "no slice B" (David's "VHF & UHF" button,
+  replayed live with every reply logged). FlexPad now reads ahead in the button for the slice's own
+  `slice tune`, `mode=` and `rxant=` and opens it there, where it gets its own panadapter and stays.
+- If the radio does close a new slice again, the button stops at once and says why, instead of
+  retrying eight times.
+
 ## [0.12.1-beta] - 2026-09-19
 
 ### Changed

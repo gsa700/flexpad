@@ -37,7 +37,8 @@ public static class Reference
         Runs on        each button follows the active slice, or is pinned to a letter (right-click, Runs on):
                        a pinned button's {slice} and {pan} always mean that slice, and it makes that slice active when done
         Other lines    wait 0.5  pauses        # starts a comment
-                       slices A B   open or close slices until exactly A and B exist (FlexPad does this, then waits)
+                       slices A B   open or close slices until exactly A and B exist (FlexPad does this, then waits);
+                                    a slice it has to open is opened where the button's own 'slice tune {B} ...' puts it
 
         TUNING AND MODE
           slice tune {slice} 14.250                  retune (transverter bands need an XVTR definition)

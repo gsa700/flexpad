@@ -6,7 +6,7 @@ radio; a FlexControl USB knob tunes the active slice and its buttons map to acti
 buttons. Exists because SmartSDR memories cannot store RX/TX antenna ports, which matters for
 transverters on XVTA/XVTB, and because the FlexControl only works while SmartSDR is running.
 **.NET 10 + Avalonia 12.1**, MVVM. Windows / Linux / Raspberry Pi (arm64). GPLv3. By David
-Erickson (AB0R). Status: **0.12.1-beta**.
+Erickson (AB0R). Status: **0.12.2-beta**.
 
 Fourth app in the station-tools family. **LP-100A Monitor** (`~/Documents/Programming/lp100a-monitor`)
 is the family's reference template and **W2 Monitor** (`~/Documents/Programming/w2-monitor-x`) its
@@ -87,7 +87,11 @@ Avalonia shell. Put new parsing/decision logic in Core with tests, not in view-m
   if that slice is not already active (last, so a button that opens its own slice works; skipped when the run stopped on an
   error); an absent key means "follow the active slice", which is what every pre-0.12 button has.
 - `slices A B` is FlexPad's own line (CommandSequence.EnsureSlices): remove what isn't listed, `slice create freq= ant=
-  mode=` (copying the active slice) until every letter exists, waiting on status between steps. Verified live
+  mode=` until every letter exists, **aimed by reading ahead** in the button for that letter's tune/mode/rxant
+  (`HintsFrom`): with the 8600M front panel in single-slice view, a slice created on the active slice's frequency lands in
+  the same panadapter and the radio closes it again within 80 ms, while one created on its own band gets its own pan and
+  stays (seen live 2026-09-19). A locked slice accepts `slice tune` but lands somewhere else (97.86 for 144.2): unlock first.
+  Steps wait on status in between. Verified live
   2026-09-18: the create reply text is the new slice index and its `index_letter` status follows immediately; the
   radio hands out the lowest free letter.
 - Commands verified by sending each with the radio's current value (a no-op the radio accepts or

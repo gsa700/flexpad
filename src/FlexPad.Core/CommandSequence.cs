@@ -29,6 +29,47 @@ public static partial class CommandSequence
     [GeneratedRegex(@"^slices((\s+[A-Ha-h])+)\s*$", RegexOptions.IgnoreCase)]
     private static partial Regex SlicesLine();
 
+    [GeneratedRegex(@"^slice\s+t(?:une)?\s+\{([A-H])\}\s+([0-9.]+)", RegexOptions.IgnoreCase)]
+    private static partial Regex TuneByLetter();
+
+    [GeneratedRegex(@"^slice\s+s(?:et)?\s+\{([A-H])\}\s+(.*)$", RegexOptions.IgnoreCase)]
+    private static partial Regex SetByLetter();
+
+    /// <summary>Where a slice that has to be opened should be opened: taken from the button's own lines.</summary>
+    public sealed record SliceHint(string? Frequency, string? Antenna, string? Mode);
+
+    /// <summary>
+    /// Read ahead in a button for what it is about to do to each slice letter: the first
+    /// <c>slice tune {B} …</c>, and the first <c>mode=</c> and <c>rxant=</c> in a <c>slice set {B} …</c>.
+    /// A <c>slices</c> line uses this to open a missing slice where it is going to live.
+    /// </summary>
+    public static Dictionary<string, SliceHint> HintsFrom(IEnumerable<string> lines)
+    {
+        var hints = new Dictionary<string, SliceHint>();
+        foreach (var raw in lines)
+        {
+            var line = raw.Trim();
+            if (TuneByLetter().Match(line) is { Success: true } t)
+            {
+                var l = t.Groups[1].Value.ToUpperInvariant();
+                var h = hints.GetValueOrDefault(l) ?? new SliceHint(null, null, null);
+                hints[l] = h with { Frequency = h.Frequency ?? t.Groups[2].Value };
+            }
+            else if (SetByLetter().Match(line) is { Success: true } s)
+            {
+                var l = s.Groups[1].Value.ToUpperInvariant();
+                var h = hints.GetValueOrDefault(l) ?? new SliceHint(null, null, null);
+                foreach (var (k, v) in FlexProtocol.KeyValues(s.Groups[2].Value))
+                {
+                    if (k == "mode") h = h with { Mode = h.Mode ?? v };
+                    else if (k == "rxant") h = h with { Antenna = h.Antenna ?? v };
+                }
+                hints[l] = h;
+            }
+        }
+        return hints;
+    }
+
     public static SequenceLine Classify(string raw)
     {
         var line = raw.Trim();
@@ -93,12 +134,18 @@ public static partial class CommandSequence
     /// open slices until every wanted letter is there. The radio gives a new slice the lowest free
     /// letter, so a wanted letter above a gap (A and C, no B) means opening a filler and closing it
     /// afterwards. Each step waits for the radio's status before the next, because the lines that
-    /// follow address the slices by letter. A new slice starts as a copy of the active one's
-    /// frequency, RX antenna and mode; the button's own lines then set it up.
+    /// follow address the slices by letter.
+    /// <para>A new slice is opened where the button is about to put it (<paramref name="hints"/>, read
+    /// ahead from the button's own lines), not as a copy of the active slice. That matters: a FLEX-8600M
+    /// with its front panel in single-slice view accepts a second slice on the active slice's frequency,
+    /// in the same panadapter, and closes it again 80 ms later; opened on its own frequency and antenna
+    /// it gets its own panadapter and stays (seen live 2026-09-19 with David's "VHF &amp; UHF" button).
+    /// Only a filler, or a slice the button never tunes, still starts as a copy.</para>
     /// </summary>
-    /// <returns>False when the radio refused a step or the letters never appeared.</returns>
+    /// <returns>False when the radio refused a step, closed the new slice again, or the letters never appeared.</returns>
     public static bool EnsureSlices(IReadOnlyCollection<string> wanted, SliceTable slices,
-        Func<string, (int Code, string Text)> send, Action<double> sleep, Action<string>? report = null)
+        Func<string, (int Code, string Text)> send, Action<double> sleep, Action<string>? report = null,
+        IReadOnlyDictionary<string, SliceHint>? hints = null)
     {
         bool Do(string cmd, out string text)
         {
@@ -138,10 +185,13 @@ public static partial class CommandSequence
             var before = slices.Live();
             var like = slices.Active() ?? before.FirstOrDefault();
             var t = like is null ? null : slices.Get(like);
-            var create = t is null
-                ? "slice create freq=14.100000 ant=ANT1 mode=USB"
-                : $"slice create freq={t.GetValueOrDefault("RF_frequency", "14.100000")} " +
-                  $"ant={t.GetValueOrDefault("rxant", "ANT1")} mode={t.GetValueOrDefault("mode", "USB")}";
+            // The radio hands out the lowest free letter, so that is the slice this create will make.
+            var next = "ABCDEFGH".Select(c => c.ToString()).FirstOrDefault(l => !have.Contains(l));
+            var hint = next is not null && wanted.Contains(next) ? hints?.GetValueOrDefault(next) : null;
+            var create = "slice create " +
+                $"freq={hint?.Frequency ?? t?.GetValueOrDefault("RF_frequency") ?? "14.100000"} " +
+                $"ant={hint?.Antenna ?? t?.GetValueOrDefault("rxant") ?? "ANT1"} " +
+                $"mode={hint?.Mode ?? t?.GetValueOrDefault("mode") ?? "USB"}";
             if (!Do(create, out var reply)) return false;
 
             string? fresh = null;
@@ -150,6 +200,16 @@ public static partial class CommandSequence
             if (fresh is null || !WaitFor(() => LetterOf(fresh).Length > 0))
             {
                 report?.Invoke("error: the radio accepted slice create but never reported the new slice");
+                return false;
+            }
+            // Give the radio a moment, then make sure it kept the slice. It also lets a new
+            // panadapter settle before the button's next command lands on it.
+            sleep(0.4);
+            if (!slices.Live().Contains(fresh))
+            {
+                report?.Invoke($"error: the radio opened slice {LetterOf(fresh)} and closed it again. It keeps a second slice " +
+                               "only on its own panadapter: give the button a 'slice tune {" + LetterOf(fresh) +
+                               "} <MHz>' line on another band, or switch the radio to a two-slice view first");
                 return false;
             }
             if (!wanted.Contains(LetterOf(fresh))) fillers.Add(fresh);
@@ -175,7 +235,9 @@ public static partial class CommandSequence
     {
         sleep ??= s => Thread.Sleep(TimeSpan.FromSeconds(s));
         var ok = true;
-        foreach (var raw in lines)
+        var all = lines as IReadOnlyList<string> ?? lines.ToList();
+        Dictionary<string, SliceHint>? hints = null;
+        foreach (var raw in all)
         {
             SequenceLine parsed;
             try { parsed = Classify(raw); }
@@ -194,7 +256,8 @@ public static partial class CommandSequence
                     sleep(parsed.WaitSeconds);
                     continue;
                 case LineType.Slices:
-                    if (!EnsureSlices(parsed.Command.Split(' '), slices, send, sleep, report))
+                    hints ??= HintsFrom(all);
+                    if (!EnsureSlices(parsed.Command.Split(' '), slices, send, sleep, report, hints))
                     {
                         ok = false;
                         if (stopOnError) return false;

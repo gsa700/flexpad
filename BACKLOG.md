@@ -110,3 +110,10 @@
 - 2026-09-19: 0.12.1-beta. David: "make the pinned button also make its slice active". Done in
   CommandSequence.Run after the lines have run; four new tests in TargetSliceTests.
   David after updating both: "pinned buttons make the slice active FB". 0.12.1-beta confirmed.
+- 2026-09-19: 0.12.2-beta. David's "VHF & UHF" all-slices button failed from single-slice operation:
+  "slice B doesn't get set up right". Read his real config through a scheduled-task copy, replayed
+  the button live with every reply and status logged (guarded, restored): slice B was created as a
+  copy of A in A's panadapter and the radio closed it 80-90 ms later; a separate oddity (tune to
+  144.2 landing on 97.86) was his slice A being locked. Experiment: B created on 432 MHz with XVTB
+  gets pan 0x40000001 and survives. Fix: `slices` reads ahead and opens the slice where it will live.
+
