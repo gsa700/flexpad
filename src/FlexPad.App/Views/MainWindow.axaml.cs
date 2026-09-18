@@ -49,6 +49,8 @@ public partial class MainWindow : Window
 
     private void OnAddClick(object? sender, RoutedEventArgs e) => (DataContext as MainWindowViewModel)?.Add();
     private void OnBandSetClick(object? sender, RoutedEventArgs e) => AppRef?.OpenBandSet();
+    private void OnPinAllClick(object? sender, RoutedEventArgs e) => (DataContext as MainWindowViewModel)?.PinAll("A");
+    private void OnUnpinAllClick(object? sender, RoutedEventArgs e) => (DataContext as MainWindowViewModel)?.PinAll(null);
     private void OnConsoleClick(object? sender, RoutedEventArgs e) => AppRef?.ShowConsole();
     private void OnReferenceClick(object? sender, RoutedEventArgs e) => AppRef?.ShowReference(this);
     private void OnSetupClick(object? sender, RoutedEventArgs e) => AppRef?.ShowSetup();

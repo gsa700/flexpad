@@ -134,9 +134,12 @@
         <TextBox Grid.Row="1" Grid.Column="1" x:Name="LabelBox" Text="{Binding Details.Label, Mode=TwoWay}" Margin="0,0,0,6"/>
 
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Hotkey" VerticalAlignment="Center" Margin="0,0,10,6"/>
-        <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
-          <TextBox Grid.Column="0" Text="{Binding Details.Hotkey, Mode=TwoWay}" PlaceholderText="optional: F1, Ctrl+1, Alt+Shift+X"/>
-          <CheckBox Grid.Column="1" Content="Band row (bottom)" IsChecked="{Binding Details.InBandRow, Mode=TwoWay}" Margin="10,0,0,0"/>
+        <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,0,0,6">
+          <TextBox Grid.Column="0" Text="{Binding Details.Hotkey, Mode=TwoWay}" PlaceholderText="optional: F1, Ctrl+1"/>
+          <TextBlock Grid.Column="1" Text="Runs on" VerticalAlignment="Center" Margin="10,0,6,0"
+                     ToolTip.Tip="Which slice {slice} and {pan} mean for this button"/>
+          <ComboBox Grid.Column="2" ItemsSource="{Binding Details.RunsOnChoices}" SelectedItem="{Binding Details.RunsOn, Mode=TwoWay}" MinWidth="130"/>
+          <CheckBox Grid.Column="3" Content="Band row (bottom)" IsChecked="{Binding Details.InBandRow, Mode=TwoWay}" Margin="10,0,0,0"/>
         </Grid>
 
         <TextBlock Grid.Row="3" Grid.Column="0" Text="Color" VerticalAlignment="Center" Margin="0,0,10,6"/>

@@ -30,6 +30,10 @@
             <MenuFlyout>
               <MenuItem Header="New button…" Click="OnAddClick"/>
               <MenuItem Header="Band set…" Click="OnBandSetClick"/>
+              <Separator/>
+              <MenuItem Header="Pin unpinned buttons to slice A" Click="OnPinAllClick"
+                        ToolTip.Tip="Every button that follows the active slice will always run on slice A instead"/>
+              <MenuItem Header="Unpin all buttons (follow the active slice)" Click="OnUnpinAllClick"/>
             </MenuFlyout>
           </DropDownButton.Flyout>
         </DropDownButton>
@@ -53,11 +57,19 @@
           <DataTemplate x:DataType="vm:ButtonViewModel">
             <Button Command="{Binding FireCommand}" Background="{Binding Background}" Foreground="{Binding Foreground}"
                     HorizontalAlignment="Stretch" Margin="3,2" MinHeight="34" Padding="4,2"
-                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center" CornerRadius="5">
+                    HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" CornerRadius="5">
               <Button.ContextMenu>
                 <ContextMenu>
                   <MenuItem Header="Edit…" Command="{Binding EditCommand}"/>
                   <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}"/>
+                  <MenuItem Header="Runs on" ItemsSource="{Binding RunsOn}">
+                    <MenuItem.ItemContainerTheme>
+                      <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:RunsOnChoice">
+                        <Setter Property="Header" Value="{Binding Header}"/>
+                        <Setter Property="Command" Value="{Binding Command}"/>
+                      </ControlTheme>
+                    </MenuItem.ItemContainerTheme>
+                  </MenuItem>
                   <Separator/>
                   <MenuItem Header="Move earlier" Command="{Binding MoveEarlierCommand}"/>
                   <MenuItem Header="Move later" Command="{Binding MoveLaterCommand}"/>
@@ -65,11 +77,15 @@
                   <MenuItem Header="Delete" Command="{Binding DeleteCommand}"/>
                 </ContextMenu>
               </Button.ContextMenu>
-              <StackPanel>
-                <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" FontSize="12"/>
-                <TextBlock Text="{Binding Hotkey}" HorizontalAlignment="Center" FontSize="9" Opacity="0.75"
-                           IsVisible="{Binding HasHotkey}"/>
-              </StackPanel>
+              <Grid>
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" FontSize="12"/>
+                  <TextBlock Text="{Binding Hotkey}" HorizontalAlignment="Center" FontSize="9" Opacity="0.75"
+                             IsVisible="{Binding HasHotkey}"/>
+                </StackPanel>
+                <TextBlock Text="{Binding TargetBadge}" IsVisible="{Binding HasTarget}" FontSize="9" FontWeight="Bold" Opacity="0.7"
+                           HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-1,1,0"/>
+              </Grid>
             </Button>
           </DataTemplate>
         </ItemsControl.ItemTemplate>
@@ -88,11 +104,19 @@
         <DataTemplate x:DataType="vm:ButtonViewModel">
           <Button Command="{Binding FireCommand}" Background="{Binding Background}" Foreground="{Binding Foreground}"
                   HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="3" MinHeight="52"
-                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" CornerRadius="5">
+                  HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" CornerRadius="5">
             <Button.ContextMenu>
               <ContextMenu>
                 <MenuItem Header="Edit…" Command="{Binding EditCommand}"/>
                 <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}"/>
+                <MenuItem Header="Runs on" ItemsSource="{Binding RunsOn}">
+                  <MenuItem.ItemContainerTheme>
+                  <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:RunsOnChoice">
+                    <Setter Property="Header" Value="{Binding Header}"/>
+                    <Setter Property="Command" Value="{Binding Command}"/>
+                  </ControlTheme>
+                  </MenuItem.ItemContainerTheme>
+                </MenuItem>
                 <Separator/>
                 <MenuItem Header="Move earlier" Command="{Binding MoveEarlierCommand}"/>
                 <MenuItem Header="Move later" Command="{Binding MoveLaterCommand}"/>
@@ -100,11 +124,15 @@
                 <MenuItem Header="Delete" Command="{Binding DeleteCommand}"/>
               </ContextMenu>
             </Button.ContextMenu>
-            <StackPanel>
-              <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" FontSize="14"/>
-              <TextBlock Text="{Binding Hotkey}" HorizontalAlignment="Center" FontSize="10" Opacity="0.75"
-                         IsVisible="{Binding HasHotkey}"/>
-            </StackPanel>
+            <Grid>
+              <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" FontSize="14"/>
+                <TextBlock Text="{Binding Hotkey}" HorizontalAlignment="Center" FontSize="10" Opacity="0.75"
+                           IsVisible="{Binding HasHotkey}"/>
+              </StackPanel>
+              <TextBlock Text="{Binding TargetBadge}" IsVisible="{Binding HasTarget}" FontSize="11" FontWeight="Bold" Opacity="0.7"
+                         HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,2,0"/>
+            </Grid>
           </Button>
         </DataTemplate>
       </ItemsControl.ItemTemplate>

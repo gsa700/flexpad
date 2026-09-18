@@ -88,10 +88,17 @@ public sealed class ButtonConfig
     /// <summary>Where the button is shown: null for the main grid, "band" for the row along the bottom.</summary>
     [JsonPropertyName("group")] [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? Group { get; set; }
 
+    /// <summary>The slice letter this button runs on ("A".."H"); null means whichever slice is active.</summary>
+    [JsonPropertyName("slice")] [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? Slice { get; set; }
+
+    /// <summary><see cref="Slice"/> cleaned up: an upper-case letter A to H, or null.</summary>
+    [JsonIgnore] public string? TargetLetter =>
+        Slice?.Trim().ToUpperInvariant() is { Length: 1 } l && l[0] is >= 'A' and <= 'H' ? l : null;
+
     public const string BandGroup = "band";
     [JsonIgnore] public bool InBandRow => Group == BandGroup;
 
-    public ButtonConfig Clone() => new() { Label = Label, Key = Key, Color = Color, Commands = Commands.ToList(), Group = Group };
+    public ButtonConfig Clone() => new() { Label = Label, Key = Key, Color = Color, Commands = Commands.ToList(), Group = Group, Slice = Slice };
 }
 
 public sealed class KnobConfig

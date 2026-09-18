@@ -81,3 +81,11 @@
   holds a ButtonEditorViewModel for the shared details; ButtonActions in Core for the common
   actions), Build panel removed from the editor at David's word. Verified on Windows by posting
   Enter twice to the window: a "3.925 LSB" button with four lines landed in the scratch config.
+  David on 0.11.0: "tried it on a simple button capture and it worked great". He also found that with a
+  second slice open and active, an older memory button ran against slice B, not the slice it was made
+  for: "even the single memories need to be slice aware".
+- 2026-09-19: 0.12.0-beta. Per-button "Runs on" (active slice or a letter), badge on the button,
+  right-click submenu, picker in the editor / guided start / band-set generator, and bulk pin and
+  unpin under + Button. Shipped without asking first, like the other bug-type feedback. Verified on
+  Windows: the submenu was driven by keyboard and "Slice A" landed in the scratch config.
+

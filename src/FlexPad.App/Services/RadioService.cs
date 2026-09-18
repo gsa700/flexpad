@@ -92,10 +92,11 @@ public sealed class RadioService : IDisposable
         Note($"--- {button.Label} ---");
         var lines = button.Commands.ToList();
         var stop = _config.StopOnError;
+        var target = button.TargetLetter;
         try
         {
             var ok = await Task.Run(() => CommandSequence.Run(lines, _client.Slices,
-                cmd => _client.Send(cmd), stop, err => Post(() => Fail(err))));
+                cmd => _client.Send(cmd), stop, err => Post(() => Fail(err)), sleep: null, target: target));
             Append(ok ? Traffic.Note : Traffic.Error, $"--- {button.Label}: {(ok ? "done" : "failed")} ---");
             return ok;
         }

@@ -22,6 +22,7 @@ public sealed class ButtonEditorViewModel : ViewModelBase
         _colorHex = button.Color ?? "";
         _commandsText = string.Join("\n", button.Commands);
         _inBandRow = button.InBandRow;
+        _runsOn = button.TargetLetter ?? ActiveSlice;
         foreach (var (hex, name) in Reference.Palette)
             Swatches.Add(new Swatch(hex, name, new RelayCommand(() => ColorHex = hex)));
         ClearColorCommand = new RelayCommand(() => ColorHex = "");
@@ -60,6 +61,14 @@ public sealed class ButtonEditorViewModel : ViewModelBase
 
     private string _commandsText;
     public string CommandsText { get => _commandsText; set => SetProperty(ref _commandsText, value); }
+
+    public const string ActiveSlice = "Active slice";
+
+    /// <summary>"Active slice", then A to H: which slice the button's {slice} and {pan} mean.</summary>
+    public string[] RunsOnChoices { get; } = new[] { ActiveSlice }.Concat(ButtonActions.SliceLetters).ToArray();
+
+    private string _runsOn;
+    public string RunsOn { get => _runsOn; set => SetProperty(ref _runsOn, value ?? ActiveSlice); }
 
     private bool _inBandRow;
     /// <summary>Show this button in the row along the bottom instead of the main grid.</summary>
@@ -132,6 +141,7 @@ public sealed class ButtonEditorViewModel : ViewModelBase
         b.Key = string.IsNullOrWhiteSpace(Hotkey) ? null : Hotkey.Trim();
         b.Color = string.IsNullOrWhiteSpace(ColorHex) ? null : ColorHex.Trim();
         b.Group = InBandRow ? ButtonConfig.BandGroup : null;
+        b.Slice = RunsOn == ActiveSlice ? null : RunsOn;
         var lines = CommandsText.Replace("\r\n", "\n").Split('\n').Select(l => l.TrimEnd()).ToList();
         while (lines.Count > 0 && lines[^1].Length == 0) lines.RemoveAt(lines.Count - 1);
         b.Commands = lines;

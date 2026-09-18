@@ -15,9 +15,12 @@
     </StackPanel>
 
     <StackPanel Spacing="6">
-      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
         <TextBlock Grid.Column="0" Text="SET" FontSize="12" FontWeight="Bold" Foreground="{StaticResource DimBrush}" VerticalAlignment="Center"/>
         <ComboBox Grid.Column="1" ItemsSource="{Binding Sets}" SelectedIndex="{Binding SetIndex, Mode=TwoWay}" HorizontalAlignment="Stretch"/>
+        <TextBlock Grid.Column="2" Text="RUNS ON" FontSize="12" FontWeight="Bold" Foreground="{StaticResource DimBrush}" VerticalAlignment="Center" Margin="8,0,0,0"
+                   ToolTip.Tip="Which slice these buttons act on"/>
+        <ComboBox Grid.Column="3" ItemsSource="{Binding RunsOnChoices}" SelectedItem="{Binding RunsOn, Mode=TwoWay}" MinWidth="130"/>
       </Grid>
       <TextBlock Text="{Binding Blurb}" Foreground="{StaticResource DimBrush}" FontSize="11" TextWrapping="Wrap"/>
 

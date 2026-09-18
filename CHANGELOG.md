@@ -5,6 +5,25 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.12.0-beta] - 2026-09-19
+
+### Added
+- **Buttons are slice aware.** Each button has a *Runs on* setting: the active slice (as before) or
+  a fixed letter. A pinned button's `{slice}` and `{pan}` always mean that slice, so a memory made
+  on slice A still lands on A after a second slice has been opened and become active. New buttons
+  from the guided start and the band-set generator are pinned to the slice that was active when
+  they were made (ones that already name their slices by letter have nothing to pin). A small
+  letter in the button's corner shows the pin. Change it with right-click → Runs on, in the editor,
+  or on page two of the guided start. If the pinned slice is not open the button stops with a
+  message saying so and sends nothing. (David, 2026-09-19: with slice B active, an older memory
+  "ran against the active slice... even the single memories need to be slice aware".)
+- **+ Button → Pin unpinned buttons to slice A** and **Unpin all buttons**, for a grid made before
+  pins existed. Only buttons that say `{slice}` or `{pan}` are touched.
+
+### Compatibility
+- Existing buttons are unchanged until pinned: no `"slice"` key in the config means "follow the
+  active slice". The knob and its functions still act on the active slice.
+
 ## [0.11.0-beta] - 2026-09-18
 
 ### Added

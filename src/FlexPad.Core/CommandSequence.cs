@@ -55,21 +55,32 @@ public static partial class CommandSequence
     }
 
     /// <summary>Fill placeholders from the live slice table. Throws when one can't be resolved.</summary>
-    public static string Substitute(string command, SliceTable slices)
+    /// <param name="target">The slice letter the button is pinned to, or null for "whichever is
+    /// active". A pinned button's <c>{slice}</c> and <c>{pan}</c> mean that slice, so a memory made
+    /// for slice A still lands on A after a second slice has been opened and become active
+    /// (David, 2026-09-19: "even the single memories need to be slice aware").</param>
+    public static string Substitute(string command, SliceTable slices, string? target = null)
     {
+        string Own(string placeholder)
+        {
+            if (string.IsNullOrEmpty(target))
+                return slices.Active() ?? throw new SequenceException($"no active slice - cannot fill {{{placeholder}}}");
+            return slices.ByLetter(target) ?? throw new SequenceException(
+                $"this button runs on slice {target}, which is not open (right-click the button, Runs on, to change that)");
+        }
         return Placeholder().Replace(command, m =>
         {
             var key = m.Groups[1].Value;
             if (key == "pan")
             {
-                var active = slices.Active() ?? throw new SequenceException("no active slice - cannot fill {pan}");
+                var active = Own("pan");
                 var attrs = slices.Get(active);
                 if (attrs is not null && attrs.TryGetValue("pan", out var pan) && pan.Length > 0) return pan;
-                throw new SequenceException("active slice has no panadapter - cannot fill {pan}");
+                throw new SequenceException("that slice has no panadapter - cannot fill {pan}");
             }
             var (idx, what) = key switch
             {
-                "slice" => (slices.Active(), "no active slice"),
+                "slice" => (Own("slice"), "no active slice"),
                 "tx" => (slices.Tx(), "no transmit slice"),
                 _ => (slices.ByLetter(key), $"no slice {key}"),
             };
@@ -160,7 +171,7 @@ public static partial class CommandSequence
     /// <param name="report">Called with each error message as it happens.</param>
     public static bool Run(IEnumerable<string> lines, SliceTable slices,
         Func<string, (int Code, string Text)> send, bool stopOnError, Action<string>? report = null,
-        Action<double>? sleep = null)
+        Action<double>? sleep = null, string? target = null)
     {
         sleep ??= s => Thread.Sleep(TimeSpan.FromSeconds(s));
         var ok = true;
@@ -192,7 +203,7 @@ public static partial class CommandSequence
             }
 
             string cmd;
-            try { cmd = Substitute(parsed.Command, slices); }
+            try { cmd = Substitute(parsed.Command, slices, target); }
             catch (SequenceException ex)
             {
                 report?.Invoke($"error: {ex.Message}");

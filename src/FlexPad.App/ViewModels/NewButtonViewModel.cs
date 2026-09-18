@@ -81,6 +81,11 @@ public sealed class NewButtonViewModel : ViewModelBase
                 Details.Label = _autoLabel = label;
             if (color is not null && string.IsNullOrWhiteSpace(Details.ColorHex)) Details.ColorHex = color;
             Details.InBandRow = Kind == NewButtonKind.Band;
+            // A button that says {slice} or {pan} is pinned to the slice it was made from, so it
+            // still lands there when another slice is active later. Ones that name their slices
+            // by letter (all-slices capture, TX to B) have nothing to pin.
+            var usesOwnSlice = lines.Any(l => l.Contains("{slice}") || l.Contains("{pan}"));
+            Details.RunsOn = usesOwnSlice ? ActiveLetter() ?? ButtonEditorViewModel.ActiveSlice : ButtonEditorViewModel.ActiveSlice;
             GoTo(1);
         }
         catch (SequenceException ex)
@@ -88,6 +93,14 @@ public sealed class NewButtonViewModel : ViewModelBase
             Error = ex.Message;
         }
         return null;
+    }
+
+    private string? ActiveLetter()
+    {
+        var slices = _radio.Client.Slices;
+        var idx = slices.Active();
+        var letter = idx is null ? null : slices.Get(idx)?.GetValueOrDefault("index_letter");
+        return string.IsNullOrEmpty(letter) ? null : letter;
     }
 
     private string _error = "";

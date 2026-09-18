@@ -109,6 +109,44 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         Changed?.Invoke();
     }
 
+    /// <summary>Pin a button to a slice letter, or null for "whichever slice is active".</summary>
+    public void SetSlice(ButtonConfig b, string? letter)
+    {
+        if (b.TargetLetter == letter) return;
+        b.Slice = letter;
+        Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// Bulk version of <see cref="SetSlice"/> for a grid made before buttons could be pinned. With a
+    /// letter: every button that follows the active slice and actually says {slice} or {pan} is
+    /// pinned to it. With null: every pinned button follows the active slice again.
+    /// </summary>
+    public int PinAll(string? letter)
+    {
+        var n = 0;
+        foreach (var b in _config().Buttons)
+        {
+            if (letter is null)
+            {
+                if (b.TargetLetter is null) continue;
+                b.Slice = null;
+            }
+            else
+            {
+                var usesOwnSlice = b.Commands.Any(c => c.Contains("{slice}") || c.Contains("{pan}"));
+                if (!usesOwnSlice || b.TargetLetter is not null) continue;
+                b.Slice = letter;
+            }
+            n++;
+        }
+        if (n > 0) Changed?.Invoke();
+        _radio.Note(letter is null
+            ? $"{n} button(s) now follow the active slice"
+            : $"{n} button(s) pinned to slice {letter}");
+        return n;
+    }
+
     /// <summary>Drag-and-drop: <paramref name="item"/> takes <paramref name="target"/>'s slot and row.</summary>
     public void DropOnto(ButtonConfig item, ButtonConfig target)
     {
@@ -189,7 +227,17 @@ public sealed class ButtonViewModel : ViewModelBase
         MoveEarlierCommand = new RelayCommand(() => owner.Move(config, -1));
         MoveLaterCommand = new RelayCommand(() => owner.Move(config, +1));
         DeleteCommand = new RelayCommand(() => owner.Delete(config));
+        RunsOn = new[] { (string?)null }.Concat(ButtonActions.SliceLetters.Cast<string?>())
+            .Select(l => new RunsOnChoice(
+                (config.TargetLetter == l ? "✓  " : "     ") + (l is null ? "The active slice" : $"Slice {l}"),
+                new RelayCommand(() => owner.SetSlice(config, l))))
+            .ToList();
     }
+
+    /// <summary>The slice letter shown in the button's corner when it is pinned to one.</summary>
+    public string TargetBadge => Config.TargetLetter ?? "";
+    public bool HasTarget => Config.TargetLetter is not null;
+    public List<RunsOnChoice> RunsOn { get; }
 
     public ButtonConfig Config { get; }
     public string Label => Config.Label;
@@ -215,3 +263,6 @@ public sealed class ButtonViewModel : ViewModelBase
     public RelayCommand MoveLaterCommand { get; }
     public RelayCommand DeleteCommand { get; }
 }
+
+/// <summary>One entry of a button's "Runs on" context submenu.</summary>
+public sealed record RunsOnChoice(string Header, RelayCommand Command);

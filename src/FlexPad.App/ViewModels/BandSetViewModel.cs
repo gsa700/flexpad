@@ -19,6 +19,8 @@ public sealed class BandSetViewModel : ViewModelBase
         XvtAAntenna = Antennas.Contains("XVTA") ? "XVTA" : Antennas.FirstOrDefault();
         XvtBAntenna = Antennas.Contains("XVTB") ? "XVTB" : Antennas.FirstOrDefault();
         _xvtrs = radio.Client.XvtrIndexByName();
+        var letter = s?.GetValueOrDefault("index_letter");
+        _runsOn = string.IsNullOrEmpty(letter) ? ButtonEditorViewModel.ActiveSlice : letter;
         foreach (var b in BandSet.Bands)
             Amateur.Add(new BandRow(b, selected: b.Transverter is null));   // HF on by default
         foreach (var b in BandSet.Broadcast)
@@ -28,6 +30,13 @@ public sealed class BandSetViewModel : ViewModelBase
     public ObservableCollection<BandRow> Amateur { get; } = new();
     public ObservableCollection<BandRow> Broadcast { get; } = new();
     public List<string> Antennas { get; }
+
+    public string[] RunsOnChoices { get; } = new[] { ButtonEditorViewModel.ActiveSlice }.Concat(ButtonActions.SliceLetters).ToArray();
+
+    private string _runsOn;
+    /// <summary>Which slice the generated buttons act on; defaults to the slice that is active now.</summary>
+    public string RunsOn { get => _runsOn; set => SetProperty(ref _runsOn, value ?? ButtonEditorViewModel.ActiveSlice); }
+    public string? RunsOnLetter => RunsOn == ButtonEditorViewModel.ActiveSlice ? null : RunsOn;
 
     public string[] Sets { get; } = { "Amateur bands", "Broadcast, CB and WWV" };
 
