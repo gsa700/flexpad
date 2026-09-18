@@ -88,12 +88,30 @@ public sealed class ButtonConfig
     /// <summary>Where the button is shown: null for the main grid, "band" for the row along the bottom.</summary>
     [JsonPropertyName("group")] [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? Group { get; set; }
 
-    /// <summary>The slice letter this button runs on ("A".."H"); null means whichever slice is active.</summary>
+    /// <summary>
+    /// Which slice the button runs on: a letter "A".."H", or "active" for whichever slice is active.
+    /// Absent means slice A (David, 2026-09-19: "default all presets to slice A unless indicated
+    /// otherwise"); through 0.13 absent meant "active".
+    /// </summary>
     [JsonPropertyName("slice")] [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? Slice { get; set; }
 
-    /// <summary><see cref="Slice"/> cleaned up: an upper-case letter A to H, or null.</summary>
-    [JsonIgnore] public string? TargetLetter =>
-        Slice?.Trim().ToUpperInvariant() is { Length: 1 } l && l[0] is >= 'A' and <= 'H' ? l : null;
+    public const string FollowActive = "active";
+    public const string DefaultLetter = "A";
+
+    /// <summary>The letter the button runs on, or null when it follows the active slice.</summary>
+    [JsonIgnore] public string? TargetLetter
+    {
+        get
+        {
+            var v = Slice?.Trim();
+            if (string.Equals(v, FollowActive, StringComparison.OrdinalIgnoreCase)) return null;
+            return v?.ToUpperInvariant() is { Length: 1 } l && l[0] is >= 'A' and <= 'H' ? l : DefaultLetter;
+        }
+    }
+
+    /// <summary>Store a target the way the file likes it: nothing for A, "active", or the letter.</summary>
+    public void SetTarget(string? letter) =>
+        Slice = letter is null ? FollowActive : letter == DefaultLetter ? null : letter;
 
     public const string BandGroup = "band";
     [JsonIgnore] public bool InBandRow => Group == BandGroup;

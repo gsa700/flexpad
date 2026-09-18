@@ -55,13 +55,12 @@ profile, and so on.
   way, plus which one transmits and which is active, behind a `slices A B` line that opens or
   closes slices until exactly those exist. Nothing is stored in the radio: the button is the whole
   snapshot, and you can read and edit every line of it.
-- **Runs on**: a button either follows whichever slice is active or is pinned to a slice letter. A
-  new button is pinned to the slice it was made from, so a memory made on slice A still lands on A
-  after you open a second receiver and B becomes active, and pressing it makes A the active slice
-  again so the front panel and the knob follow. A small letter in the button's corner
-  shows the pin; right-click → Runs on changes it, and + Button has entries to pin or unpin the
-  whole grid at once.
-- **Placeholders**: `{slice}` is the button's slice (the active one unless the button is pinned), `{tx}` the transmit slice, `{A}`..`{H}` a slice
+- **Runs on**: every button runs on slice A unless you say otherwise, so your memories still land on
+  A after you open a second receiver and B becomes active, and pressing one makes A the active slice
+  again so the front panel and the knob follow. Right-click → Runs on picks another slice, or
+  "whichever slice is active"; a button made while B is active is set to B for you. A small mark in
+  the corner shows the exceptions (a letter, or "act"), and + Button can switch the whole grid at once.
+- **Placeholders**: `{slice}` is the button's slice (A unless Runs on says otherwise), `{tx}` the transmit slice, `{A}`..`{H}` a slice
   by letter, `{pan}` the active slice's panadapter (for `display pan set {pan} band=20`), `{panB}` slice B's, all
   resolved from the radio's live status. `wait 0.5` pauses; `#` starts a comment; `slices A B` makes exactly those slices exist.
 - **FlexControl knob**: turning it tunes the active slice by its current tuning step; fast spins are

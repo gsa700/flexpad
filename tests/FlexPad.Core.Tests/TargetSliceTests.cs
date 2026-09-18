@@ -65,6 +65,17 @@ public class TargetSliceTests
     }
 
     [Fact]
+    public void A_button_that_never_addresses_its_own_slice_does_not_pull_the_focus()
+    {
+        // Every button runs on A by default now, so "TX -> B" carries target A without meaning anything by it.
+        var t = AandB_withBActive();
+        var sent = new List<string>();
+        CommandSequence.Run(new[] { "# uses {slice} only in a comment", "slice set {B} tx=1" }, t,
+            c => { sent.Add(c); return (0, ""); }, stopOnError: true, report: null, sleep: _ => { }, target: "A");
+        Assert.Equal(new[] { "slice set 1 tx=1" }, sent);
+    }
+
+    [Fact]
     public void A_run_that_stops_on_an_error_leaves_the_focus_alone()
     {
         var t = AandB_withBActive();

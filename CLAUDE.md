@@ -6,7 +6,7 @@ radio; a FlexControl USB knob tunes the active slice and its buttons map to acti
 buttons. Exists because SmartSDR memories cannot store RX/TX antenna ports, which matters for
 transverters on XVTA/XVTB, and because the FlexControl only works while SmartSDR is running.
 **.NET 10 + Avalonia 12.1**, MVVM. Windows / Linux / Raspberry Pi (arm64). GPLv3. By David
-Erickson (AB0R). Status: **0.13.0-beta**.
+Erickson (AB0R). Status: **0.14.0-beta**.
 
 Fourth app in the station-tools family. **LP-100A Monitor** (`~/Documents/Programming/lp100a-monitor`)
 is the family's reference template and **W2 Monitor** (`~/Documents/Programming/w2-monitor-x`) its
@@ -85,11 +85,12 @@ Avalonia shell. Put new parsing/decision logic in Core with tests, not in view-m
   status lines `display pan <handle> center= bandwidth= …`) and a Full capture ends with `display pan set … bandwidth=` and
   `center=` per panadapter. Those two set commands are from FlexRadio's published list and had NOT been sent to the 8600M
   when 0.13.0 shipped (David was on a net); they sit last in a capture so a rejection cannot disturb the slice setup.
-- **A button can be pinned to a slice letter** (`"slice": "A"` on the button; `ButtonConfig.TargetLetter`). `{slice}` and
+- **Every button runs on a slice letter, A by default** (`"slice"` on the button: absent = A since 0.14, a letter, or
+  `"active"` to follow the active slice as everything did before 0.12; `ButtonConfig.TargetLetter`/`SetTarget`). `{slice}` and
   `{pan}` then mean that slice, not the active one (`CommandSequence.Substitute(…, target)`). New buttons default to the
   slice they were made from, and after a pinned button's lines have run `CommandSequence.Run` sends `slice set <n> active=1`
   if that slice is not already active (last, so a button that opens its own slice works; skipped when the run stopped on an
-  error); an absent key means "follow the active slice", which is what every pre-0.12 button has.
+  error, and only for a button that says `{slice}` or `{pan}`, so "TX -> B" does not drag the focus to A).
 - `slices A B` is FlexPad's own line (CommandSequence.EnsureSlices): remove what isn't listed, `slice create freq= ant=
   mode=` until every letter exists, **aimed by reading ahead** in the button for that letter's tune/mode/rxant
   (`HintsFrom`): with the 8600M front panel in single-slice view, a slice created on the active slice's frequency lands in

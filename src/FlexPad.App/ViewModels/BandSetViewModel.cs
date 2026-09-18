@@ -20,7 +20,7 @@ public sealed class BandSetViewModel : ViewModelBase
         XvtBAntenna = Antennas.Contains("XVTB") ? "XVTB" : Antennas.FirstOrDefault();
         _xvtrs = radio.Client.XvtrIndexByName();
         var letter = s?.GetValueOrDefault("index_letter");
-        _runsOn = string.IsNullOrEmpty(letter) ? ButtonEditorViewModel.ActiveSlice : letter;
+        _runsOn = string.IsNullOrEmpty(letter) ? ButtonConfig.DefaultLetter : letter;
         foreach (var b in BandSet.Bands)
             Amateur.Add(new BandRow(b, selected: b.Transverter is null));   // HF on by default
         foreach (var b in BandSet.Broadcast)
@@ -31,7 +31,7 @@ public sealed class BandSetViewModel : ViewModelBase
     public ObservableCollection<BandRow> Broadcast { get; } = new();
     public List<string> Antennas { get; }
 
-    public string[] RunsOnChoices { get; } = new[] { ButtonEditorViewModel.ActiveSlice }.Concat(ButtonActions.SliceLetters).ToArray();
+    public string[] RunsOnChoices { get; } = ButtonActions.SliceLetters.Append(ButtonEditorViewModel.ActiveSlice).ToArray();
 
     private string _runsOn;
     /// <summary>Which slice the generated buttons act on; defaults to the slice that is active now.</summary>

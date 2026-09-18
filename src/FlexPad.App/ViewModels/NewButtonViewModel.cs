@@ -84,8 +84,8 @@ public sealed class NewButtonViewModel : ViewModelBase
             // A button that says {slice} or {pan} is pinned to the slice it was made from, so it
             // still lands there when another slice is active later. Ones that name their slices
             // by letter (all-slices capture, TX to B) have nothing to pin.
-            var usesOwnSlice = lines.Any(l => l.Contains("{slice}") || l.Contains("{pan}"));
-            Details.RunsOn = usesOwnSlice ? ActiveLetter() ?? ButtonEditorViewModel.ActiveSlice : ButtonEditorViewModel.ActiveSlice;
+            var usesOwnSlice = lines.Any(CommandSequence.UsesOwnSlice);
+            Details.RunsOn = usesOwnSlice ? ActiveLetter() ?? ButtonConfig.DefaultLetter : ButtonConfig.DefaultLetter;
             GoTo(1);
         }
         catch (SequenceException ex)

@@ -124,4 +124,10 @@
 - 2026-09-19: 0.13.0-beta. Scope capture, {panA}..{panH}, client follows `sub pan all`. Built and
   released without touching the radio (he was on a net): `display pan set bandwidth=/center=` are from
   the published command list, unverified on his radio at release time.
+- 2026-09-19: 0.14.0-beta. I had proposed presets that close slice B (capture default "every open
+  slice", a "close other slices" checkbox, a bulk entry). David: "what if we split the difference
+  and default all presets to slice A unless indicated otherwise? That is 95% of it and much easier."
+  Done: absent `slice` key = A, `"active"` = follow the active slice, badge marks exceptions only,
+  focus follows only buttons that address their own slice. Closing slice B from a single-slice
+  preset stays available by hand (`slices A` as the first line) but is not built into anything.
 

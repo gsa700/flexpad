@@ -5,6 +5,26 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.14.0-beta] - 2026-09-19
+
+### Changed
+- **Every button runs on slice A unless told otherwise.** A button with no *Runs on* setting used to
+  follow whichever slice was active; it now runs on slice A, so a grid of ordinary presets does the
+  right thing with a second receiver open and nothing to set up, on any machine. *Runs on* offers
+  Slice A (default), B to H, and "whichever slice is active" for the old behaviour. A new button
+  made while another slice is active is still set to that slice. (David, 2026-09-19: "default all
+  presets to slice A unless indicated otherwise. That is 95% of it and much easier.")
+- The corner badge now marks the exceptions only: a letter for B to H, "act" for a button that
+  follows the active slice. Slice A buttons show nothing.
+- A button pulls the focus to its slice only if it addresses its own slice (`{slice}` or `{pan}`).
+  "TX -> B" or an all-slices capture no longer has any reason to make A active.
+- + Button's bulk entries are now "Run every button on slice A" and "Let every button follow the
+  active slice".
+
+### Compatibility
+- In `config.json`, no `"slice"` key now means A, and `"slice": "active"` means follow the active
+  slice. A grid that was never pinned therefore changes behaviour on update: that is the point.
+
 ## [0.13.0-beta] - 2026-09-19
 
 ### Added

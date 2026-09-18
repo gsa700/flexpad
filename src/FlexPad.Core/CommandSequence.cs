@@ -70,6 +70,13 @@ public static partial class CommandSequence
         return hints;
     }
 
+    /// <summary>True for a command line (not a comment) that says <c>{slice}</c> or <c>{pan}</c>.</summary>
+    public static bool UsesOwnSlice(string raw)
+    {
+        var line = raw.Trim();
+        return line.Length > 0 && !line.StartsWith('#') && (line.Contains("{slice}") || line.Contains("{pan}"));
+    }
+
     public static SequenceLine Classify(string raw)
     {
         var line = raw.Trim();
@@ -302,8 +309,11 @@ public static partial class CommandSequence
 
         // A pinned button brings the front panel and the knob along: its slice becomes the active
         // one (David, 2026-09-19). Last, so a button whose own lines open the slice still works, and
-        // a run that stopped on an error leaves the focus where it was.
-        if (!string.IsNullOrEmpty(target) && slices.ByLetter(target) is { } own && slices.Active() != own)
+        // a run that stopped on an error leaves the focus where it was. Only for a button that
+        // addresses its own slice: now that every button runs on A by default, "TX -> B" or an
+        // all-slices capture must not drag the focus to A just because A is where they nominally live.
+        if (!string.IsNullOrEmpty(target) && all.Any(UsesOwnSlice)
+            && slices.ByLetter(target) is { } own && slices.Active() != own)
         {
             var cmd = $"slice set {own} active=1";
             try

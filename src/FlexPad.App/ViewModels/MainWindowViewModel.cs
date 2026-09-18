@@ -113,37 +113,29 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     public void SetSlice(ButtonConfig b, string? letter)
     {
         if (b.TargetLetter == letter) return;
-        b.Slice = letter;
+        b.SetTarget(letter);
         Changed?.Invoke();
     }
 
     /// <summary>
-    /// Bulk version of <see cref="SetSlice"/> for a grid made before buttons could be pinned. With a
-    /// letter: every button that follows the active slice and actually says {slice} or {pan} is
-    /// pinned to it. With null: every pinned button follows the active slice again.
+    /// Bulk version of <see cref="SetSlice"/>. With a letter: every button that follows the active
+    /// slice runs on that letter instead. With null: every button follows the active slice, the way
+    /// all of them did before 0.12. Buttons that never say {slice} or {pan} are left alone.
     /// </summary>
     public int PinAll(string? letter)
     {
         var n = 0;
         foreach (var b in _config().Buttons)
         {
-            if (letter is null)
-            {
-                if (b.TargetLetter is null) continue;
-                b.Slice = null;
-            }
-            else
-            {
-                var usesOwnSlice = b.Commands.Any(c => c.Contains("{slice}") || c.Contains("{pan}"));
-                if (!usesOwnSlice || b.TargetLetter is not null) continue;
-                b.Slice = letter;
-            }
+            if (!b.Commands.Any(CommandSequence.UsesOwnSlice)) continue;
+            if (letter is null ? b.TargetLetter is null : b.TargetLetter is not null) continue;
+            b.SetTarget(letter);
             n++;
         }
         if (n > 0) Changed?.Invoke();
         _radio.Note(letter is null
             ? $"{n} button(s) now follow the active slice"
-            : $"{n} button(s) pinned to slice {letter}");
+            : $"{n} button(s) now run on slice {letter}");
         return n;
     }
 
@@ -227,16 +219,18 @@ public sealed class ButtonViewModel : ViewModelBase
         MoveEarlierCommand = new RelayCommand(() => owner.Move(config, -1));
         MoveLaterCommand = new RelayCommand(() => owner.Move(config, +1));
         DeleteCommand = new RelayCommand(() => owner.Delete(config));
-        RunsOn = new[] { (string?)null }.Concat(ButtonActions.SliceLetters.Cast<string?>())
+        RunsOn = ButtonActions.SliceLetters.Cast<string?>().Append(null)
             .Select(l => new RunsOnChoice(
-                (config.TargetLetter == l ? "✓  " : "     ") + (l is null ? "The active slice" : $"Slice {l}"),
+                (config.TargetLetter == l ? "✓  " : "     ") + (l is null ? "Whichever slice is active" : l == ButtonConfig.DefaultLetter ? "Slice A (default)" : $"Slice {l}"),
                 new RelayCommand(() => owner.SetSlice(config, l))))
             .ToList();
     }
 
-    /// <summary>The slice letter shown in the button's corner when it is pinned to one.</summary>
-    public string TargetBadge => Config.TargetLetter ?? "";
-    public bool HasTarget => Config.TargetLetter is not null;
+    /// <summary>Shown in the button's corner when it does not run on the default slice A: the
+    /// letter, or "act" for a button that follows the active slice. Buttons that never address
+    /// their own slice show nothing.</summary>
+    public string TargetBadge => Config.TargetLetter ?? "act";
+    public bool HasTarget => Config.TargetLetter != ButtonConfig.DefaultLetter && Config.Commands.Any(CommandSequence.UsesOwnSlice);
     public List<RunsOnChoice> RunsOn { get; }
 
     public ButtonConfig Config { get; }

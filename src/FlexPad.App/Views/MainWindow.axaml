@@ -31,9 +31,10 @@
               <MenuItem Header="New button…" Click="OnAddClick"/>
               <MenuItem Header="Band set…" Click="OnBandSetClick"/>
               <Separator/>
-              <MenuItem Header="Pin unpinned buttons to slice A" Click="OnPinAllClick"
-                        ToolTip.Tip="Every button that follows the active slice will always run on slice A instead"/>
-              <MenuItem Header="Unpin all buttons (follow the active slice)" Click="OnUnpinAllClick"/>
+              <MenuItem Header="Run every button on slice A" Click="OnPinAllClick"
+                        ToolTip.Tip="Buttons set to follow the active slice go back to slice A, the default"/>
+              <MenuItem Header="Let every button follow the active slice" Click="OnUnpinAllClick"
+                        ToolTip.Tip="The behaviour before 0.12: a button acts on whichever slice is active"/>
             </MenuFlyout>
           </DropDownButton.Flyout>
         </DropDownButton>

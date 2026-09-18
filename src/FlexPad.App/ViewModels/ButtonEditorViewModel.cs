@@ -64,8 +64,8 @@ public sealed class ButtonEditorViewModel : ViewModelBase
 
     public const string ActiveSlice = "Active slice";
 
-    /// <summary>"Active slice", then A to H: which slice the button's {slice} and {pan} mean.</summary>
-    public string[] RunsOnChoices { get; } = new[] { ActiveSlice }.Concat(ButtonActions.SliceLetters).ToArray();
+    /// <summary>A to H, then "Active slice": which slice the button's {slice} and {pan} mean. A is the default.</summary>
+    public string[] RunsOnChoices { get; } = ButtonActions.SliceLetters.Append(ActiveSlice).ToArray();
 
     private string _runsOn;
     public string RunsOn { get => _runsOn; set => SetProperty(ref _runsOn, value ?? ActiveSlice); }
@@ -141,7 +141,7 @@ public sealed class ButtonEditorViewModel : ViewModelBase
         b.Key = string.IsNullOrWhiteSpace(Hotkey) ? null : Hotkey.Trim();
         b.Color = string.IsNullOrWhiteSpace(ColorHex) ? null : ColorHex.Trim();
         b.Group = InBandRow ? ButtonConfig.BandGroup : null;
-        b.Slice = RunsOn == ActiveSlice ? null : RunsOn;
+        b.SetTarget(RunsOn == ActiveSlice ? null : RunsOn);
         var lines = CommandsText.Replace("\r\n", "\n").Split('\n').Select(l => l.TrimEnd()).ToList();
         while (lines.Count > 0 && lines[^1].Length == 0) lines.RemoveAt(lines.Count - 1);
         b.Commands = lines;

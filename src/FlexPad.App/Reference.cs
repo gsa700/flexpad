@@ -34,8 +34,8 @@ public static class Reference
         FLEXPAD QUICK REFERENCE          SmartSDR TCP/IP API, frequencies in MHz
 
         Placeholders   {slice} active slice    {tx} transmit slice    {A}..{H} slice by letter    {pan} active slice's panadapter    {panB} slice B's panadapter
-        Runs on        each button follows the active slice, or is pinned to a letter (right-click, Runs on):
-                       a pinned button's {slice} and {pan} always mean that slice, and it makes that slice active when done
+        Runs on        each button runs on slice A unless right-click, Runs on says another letter or "whichever is active":
+                       {slice} and {pan} mean the button's slice, and a button that uses them makes that slice active when done
         Other lines    wait 0.5  pauses        # starts a comment
                        slices A B   open or close slices until exactly A and B exist (FlexPad does this, then waits);
                                     a slice it has to open is opened where the button's own 'slice tune {B} ...' puts it

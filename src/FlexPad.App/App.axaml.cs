@@ -187,7 +187,8 @@ public partial class App : Application
         foreach (var g in made)
         {
             var group = vm.BandRow ? ButtonConfig.BandGroup : null;
-            var button = new ButtonConfig { Label = g.Label, Key = g.Key, Color = g.Color, Commands = g.Lines, Group = group, Slice = vm.RunsOnLetter };
+            var button = new ButtonConfig { Label = g.Label, Key = g.Key, Color = g.Color, Commands = g.Lines, Group = group };
+            button.SetTarget(vm.RunsOnLetter);
             var existing = vm.ReplaceSameLabel ? _config.Buttons.FirstOrDefault(b => b.Label == g.Label) : null;
             if (existing is not null)
             {
@@ -195,7 +196,7 @@ public partial class App : Application
                 existing.Color = g.Color ?? existing.Color;
                 existing.Commands = g.Lines;
                 existing.Group = group;
-                existing.Slice = vm.RunsOnLetter;
+                existing.SetTarget(vm.RunsOnLetter);
                 replaced++;
             }
             else
