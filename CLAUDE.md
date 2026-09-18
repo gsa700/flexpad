@@ -6,7 +6,7 @@ radio; a FlexControl USB knob tunes the active slice and its buttons map to acti
 buttons. Exists because SmartSDR memories cannot store RX/TX antenna ports, which matters for
 transverters on XVTA/XVTB, and because the FlexControl only works while SmartSDR is running.
 **.NET 10 + Avalonia 12.1**, MVVM. Windows / Linux / Raspberry Pi (arm64). GPLv3. By David
-Erickson (AB0R). Status: **0.12.2-beta**.
+Erickson (AB0R). Status: **0.13.0-beta**.
 
 Fourth app in the station-tools family. **LP-100A Monitor** (`~/Documents/Programming/lp100a-monitor`)
 is the family's reference template and **W2 Monitor** (`~/Documents/Programming/w2-monitor-x`) its
@@ -81,6 +81,10 @@ Avalonia shell. Put new parsing/decision logic in Core with tests, not in view-m
 - **Slice status is incremental** — a retune sends `RF_frequency` alone — so `SliceTable.Merge`
   merges, never replaces. Placeholders resolve from it: `{slice}` = `active=1`, `{tx}` = `tx=1`,
   `{A}`..`{H}` = `index_letter`, `{pan}` = the active slice's `pan` handle (for `display pan set {pan} band=20`, which the radio completes from band persistence; transverter bands are `band=x<index>` from `sub xvtr all`; no band exists for general coverage, `band=gen` is refused).
+- `{panA}`..`{panH}` = the `pan` handle of the slice with that letter. The client follows `sub pan all` (`RadioClient.Pans`,
+  status lines `display pan <handle> center= bandwidth= …`) and a Full capture ends with `display pan set … bandwidth=` and
+  `center=` per panadapter. Those two set commands are from FlexRadio's published list and had NOT been sent to the 8600M
+  when 0.13.0 shipped (David was on a net); they sit last in a capture so a rejection cannot disturb the slice setup.
 - **A button can be pinned to a slice letter** (`"slice": "A"` on the button; `ButtonConfig.TargetLetter`). `{slice}` and
   `{pan}` then mean that slice, not the active one (`CommandSequence.Substitute(…, target)`). New buttons default to the
   slice they were made from, and after a pinned button's lines have run `CommandSequence.Run` sends `slice set <n> active=1`

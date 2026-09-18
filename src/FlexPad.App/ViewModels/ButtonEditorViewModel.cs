@@ -105,7 +105,7 @@ public sealed class ButtonEditorViewModel : ViewModelBase
         try
         {
             var (label, lines) = SliceCapture.Capture(_radio.Client.Slices,
-                _radio.Client.Transmit.ToDictionary(kv => kv.Key, kv => kv.Value), full);
+                _radio.Client.Transmit.ToDictionary(kv => kv.Key, kv => kv.Value), full, now: null, pans: _radio.Client.PanSnapshot());
             Insert(lines);
             if (string.IsNullOrWhiteSpace(Label) || Label == "New") Label = label;
             CaptureStatus = $"Captured {(full ? "full" : "basic")} state of the active slice.";
@@ -122,7 +122,7 @@ public sealed class ButtonEditorViewModel : ViewModelBase
         try
         {
             var (label, lines) = SliceCapture.CaptureAll(_radio.Client.Slices,
-                _radio.Client.Transmit.ToDictionary(kv => kv.Key, kv => kv.Value), full);
+                _radio.Client.Transmit.ToDictionary(kv => kv.Key, kv => kv.Value), full, now: null, pans: _radio.Client.PanSnapshot());
             Insert(lines);
             if (string.IsNullOrWhiteSpace(Label) || Label == "New") Label = label;
             var n = _radio.Client.Slices.Live().Count;

@@ -51,7 +51,7 @@
         <DropDownButton.Flyout>
           <MenuFlyout>
             <MenuItem Header="Active slice, basic: frequency, mode, antennas, filter" Command="{Binding CaptureBasicCommand}"/>
-            <MenuItem Header="Active slice, full: basic + step, AGC, NR/NB/ANF, RF gain, DAX, TX power" Command="{Binding CaptureFullCommand}"/>
+            <MenuItem Header="Active slice, full: basic + step, AGC, NR/NB/ANF, RF gain, DAX, TX power, scope width" Command="{Binding CaptureFullCommand}"/>
             <Separator/>
             <MenuItem Header="All slices, basic: every open slice, TX and active flags" Command="{Binding CaptureAllBasicCommand}"/>
             <MenuItem Header="All slices, full: the same with each slice's full state" Command="{Binding CaptureAllFullCommand}"/>

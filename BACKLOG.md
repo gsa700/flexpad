@@ -116,4 +116,12 @@
   copy of A in A's panadapter and the radio closed it 80-90 ms later; a separate oddity (tune to
   144.2 landing on 97.86) was his slice A being locked. Experiment: B created on 432 MHz with XVTB
   gets pan 0x40000001 and survives. Fix: `slices` reads ahead and opens the slice where it will live.
+  David on 0.12.2: "it worked: the second receiver was activated, both were set to the correct ANT
+  selections". Two follow-ups. (1) The new slice's scope is very wide -> 0.13.0 captures scope width and
+  centre. (2) "clicking a single slice preset changes slice B even though A has the TX": his Windows
+  config turned out to be unpinned (only 2m USB=A, 70cm USB=B); he had run the bulk pin on Fedora. Each
+  machine has its own settings file. No code change; told him to pin on Windows too.
+- 2026-09-19: 0.13.0-beta. Scope capture, {panA}..{panH}, client follows `sub pan all`. Built and
+  released without touching the radio (he was on a net): `display pan set bandwidth=/center=` are from
+  the published command list, unverified on his radio at release time.
 

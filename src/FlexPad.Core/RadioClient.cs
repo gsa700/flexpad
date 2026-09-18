@@ -62,6 +62,14 @@ public sealed partial class RadioClient : IDisposable
     /// <c>display pan set … band=x0</c> takes.</summary>
     public ConcurrentDictionary<string, ConcurrentDictionary<string, string>> Xvtrs { get; } = new();
 
+    /// <summary>Panadapters by handle (<c>display pan 0x40000000 center=… bandwidth=…</c>): what a Full
+    /// capture reads the scope width and centre from.</summary>
+    public ConcurrentDictionary<string, ConcurrentDictionary<string, string>> Pans { get; } = new();
+
+    /// <summary>A plain copy of <see cref="Pans"/> for the capture code.</summary>
+    public Dictionary<string, IReadOnlyDictionary<string, string>> PanSnapshot() =>
+        Pans.ToDictionary(kv => kv.Key, kv => (IReadOnlyDictionary<string, string>)new Dictionary<string, string>(kv.Value));
+
     /// <summary>Transverter band index by name, for the band-set generator.</summary>
     public Dictionary<string, string> XvtrIndexByName()
     {
@@ -165,6 +173,7 @@ public sealed partial class RadioClient : IDisposable
         Atu.Clear();
         Amplifiers.Clear();
         Xvtrs.Clear();
+        Pans.Clear();
         Error = null;
         Connected = true;
         StateChanged?.Invoke();
@@ -175,6 +184,7 @@ public sealed partial class RadioClient : IDisposable
         // No `sub interlock all`: the radio rejects the object name (500000A3); interlock status rides on `sub tx all`.
         Send("sub atu all", wait: false);
         Send("sub xvtr all", wait: false);
+        Send("sub pan all", wait: false);
         // Ask who we're talking to. Off this thread, because Send waits for a reply that only this
         // thread's read loop can deliver.
         Task.Run(() =>
@@ -242,6 +252,8 @@ public sealed partial class RadioClient : IDisposable
                     foreach (var (k, v) in FlexProtocol.KeyValues(p.Text[4..])) Atu[k] = v;
                 else if (p.Text.StartsWith("amplifier ", StringComparison.Ordinal))
                     MergeKeyed(Amplifiers, p.Text[10..]);   // amplifier <handle> key=value... - incremental like slices
+                else if (p.Text.StartsWith("display pan ", StringComparison.Ordinal))
+                    MergeKeyed(Pans, p.Text[12..]);          // display pan <handle> center=… bandwidth=…
                 else if (p.Text.StartsWith("xvtr ", StringComparison.Ordinal))
                     MergeKeyed(Xvtrs, p.Text[5..]);          // xvtr <index> name=2m rf_freq=144 ...
                 break;

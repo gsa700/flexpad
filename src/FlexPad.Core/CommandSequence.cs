@@ -18,12 +18,12 @@ public readonly record struct SequenceLine(LineType Type, string Command, double
 /// The button language: one command per line, <c>#</c> comments, <c>wait N</c> pauses,
 /// <c>slices A B</c> (open or close slices until exactly those letters exist), and the
 /// placeholders <c>{slice}</c> (active slice index), <c>{tx}</c> (transmit slice),
-/// <c>{A}</c>..<c>{H}</c> (slice by letter) and <c>{pan}</c> (the active slice's panadapter
-/// handle, for <c>display pan set {pan} band=20</c>). Pure, so every rule here is unit-tested.
+/// <c>{A}</c>..<c>{H}</c> (slice by letter), <c>{pan}</c> (the active slice's panadapter handle, for
+/// <c>display pan set {pan} band=20</c>) and <c>{panA}</c>..<c>{panH}</c> (the panadapter of a slice by letter). Pure, so every rule here is unit-tested.
 /// </summary>
 public static partial class CommandSequence
 {
-    [GeneratedRegex(@"\{(slice|tx|pan|[A-H])\}")]
+    [GeneratedRegex(@"\{(slice|tx|pan[A-H]?|[A-H])\}")]
     private static partial Regex Placeholder();
 
     [GeneratedRegex(@"^slices((\s+[A-Ha-h])+)\s*$", RegexOptions.IgnoreCase)]
@@ -112,6 +112,14 @@ public static partial class CommandSequence
         return Placeholder().Replace(command, m =>
         {
             var key = m.Groups[1].Value;
+            if (key.Length == 4 && key.StartsWith("pan", StringComparison.Ordinal))
+            {
+                // {panB}: the panadapter slice B lives in, for scope settings in an all-slices button.
+                var letter = key[3..];
+                var byLetter = slices.ByLetter(letter) ?? throw new SequenceException($"no slice {letter} - cannot fill {{{key}}}");
+                if (slices.Get(byLetter) is { } a && a.TryGetValue("pan", out var handle) && handle.Length > 0) return handle;
+                throw new SequenceException($"slice {letter} has no panadapter - cannot fill {{{key}}}");
+            }
             if (key == "pan")
             {
                 var active = Own("pan");

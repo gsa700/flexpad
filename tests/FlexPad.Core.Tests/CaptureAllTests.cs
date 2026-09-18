@@ -73,4 +73,53 @@ public class CaptureAllTests
         Assert.Equal("14.250 USB", SliceCapture.CaptureAll(t, new Dictionary<string, string>(), false, When).Label);
         Assert.Throws<SequenceException>(() => SliceCapture.CaptureAll(new SliceTable(), new Dictionary<string, string>(), false, When));
     }
+
+    private static Dictionary<string, IReadOnlyDictionary<string, string>> Pans() => new()
+    {
+        ["0x40000000"] = new Dictionary<string, string> { ["bandwidth"] = "0.050000", ["center"] = "144.200000" },
+        ["0x40000001"] = new Dictionary<string, string> { ["bandwidth"] = "0.100000", ["center"] = "432.150000" },
+    };
+
+    [Fact]
+    public void Full_records_each_panadapters_width_and_centre_last_and_once_per_panadapter()
+    {
+        var t = TwoSlices();
+        t.Merge("slice 0 pan=0x40000000");
+        t.Merge("slice 1 pan=0x40000001");
+        var (_, lines) = SliceCapture.CaptureAll(t, new Dictionary<string, string>(), full: true, When, Pans());
+        Assert.Equal(new[]
+        {
+            "display pan set {panA} bandwidth=0.050000", "display pan set {panA} center=144.200000",
+            "display pan set {panB} bandwidth=0.100000", "display pan set {panB} center=432.150000",
+        }, lines.Skip(lines.Count - 4));
+
+        // two slices in one panadapter: one pair of lines, through the first of them
+        t.Merge("slice 1 pan=0x40000000");
+        var shared = SliceCapture.CaptureAll(t, new Dictionary<string, string>(), full: true, When, Pans()).Lines;
+        Assert.Equal(2, shared.Count(l => l.StartsWith("display pan set")));
+        Assert.All(shared.Where(l => l.StartsWith("display pan set")), l => Assert.Contains("{panA}", l));
+    }
+
+    [Fact]
+    public void Basic_and_unknown_panadapters_leave_the_scope_out()
+    {
+        var t = TwoSlices();
+        t.Merge("slice 0 pan=0x40000000");
+        Assert.DoesNotContain(SliceCapture.CaptureAll(t, new Dictionary<string, string>(), full: false, When, Pans()).Lines, l => l.StartsWith("display pan"));
+        Assert.DoesNotContain(SliceCapture.CaptureAll(t, new Dictionary<string, string>(), full: true, When, pans: null).Lines, l => l.StartsWith("display pan"));
+        t.Merge("slice 0 active=1"); t.Merge("slice 1 active=0");
+        var single = SliceCapture.Capture(t, new Dictionary<string, string>(), full: true, When, Pans()).Lines;
+        Assert.Equal(new[] { "display pan set {pan} bandwidth=0.050000", "display pan set {pan} center=144.200000" }, single.Skip(single.Count - 2));
+    }
+
+    [Fact]
+    public void Pan_by_letter_resolves_to_that_slices_panadapter()
+    {
+        var t = TwoSlices();
+        t.Merge("slice 0 pan=0x40000000");
+        t.Merge("slice 1 pan=0x40000001");
+        Assert.Equal("display pan set 0x40000001 bandwidth=0.1", CommandSequence.Substitute("display pan set {panB} bandwidth=0.1", t));
+        Assert.Equal("display pan set 0x40000001 band=20", CommandSequence.Substitute("display pan set {pan} band=20", t));   // B is active
+        Assert.Contains("no slice C", Assert.Throws<SequenceException>(() => CommandSequence.Substitute("x {panC}", t)).Message);
+    }
 }

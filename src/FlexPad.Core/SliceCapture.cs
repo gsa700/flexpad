@@ -11,17 +11,25 @@ namespace FlexPad.Core;
 /// </summary>
 public static class SliceCapture
 {
-    /// <param name="full">Add tuning step, AGC, noise tools, RF gain, DAX and TX power.</param>
+    /// <param name="full">Add tuning step, AGC, noise tools, RF gain, DAX, TX power and the scope's
+    /// width and centre.</param>
+    /// <param name="pans">Panadapters by handle, from the radio client; null or a missing handle just
+    /// leaves the scope lines out.</param>
     /// <returns>A suggested button label and the lines.</returns>
     public static (string Label, List<string> Lines) Capture(SliceTable slices,
-        IReadOnlyDictionary<string, string> transmit, bool full, DateTime? now = null)
+        IReadOnlyDictionary<string, string> transmit, bool full, DateTime? now = null,
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? pans = null)
     {
         var idx = slices.Active() ?? throw new SequenceException("no active slice to capture");
         var s = slices.Get(idx)!;
         var stamp = (now ?? DateTime.Now).ToString("yyyy-MM-dd HH:mm");
         var lines = new List<string> { $"# captured from slice {s.GetValueOrDefault("index_letter", "?")} on {stamp}" };
         lines.AddRange(SliceLines(s, "{slice}", full));
-        if (full) lines.AddRange(PowerLines(transmit));
+        if (full)
+        {
+            lines.AddRange(PowerLines(transmit));
+            lines.AddRange(ScopeLines(s, "{pan}", pans));
+        }
         return (LabelOf(s), lines);
     }
 
@@ -30,7 +38,8 @@ public static class SliceCapture
     /// then which slice transmits and which is active. Self-contained: nothing is stored in the radio.
     /// </summary>
     public static (string Label, List<string> Lines) CaptureAll(SliceTable slices,
-        IReadOnlyDictionary<string, string> transmit, bool full, DateTime? now = null)
+        IReadOnlyDictionary<string, string> transmit, bool full, DateTime? now = null,
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? pans = null)
     {
         var live = slices.Live()
             .Select(i => slices.Get(i)!)
@@ -56,7 +65,13 @@ public static class SliceCapture
         if (tx is not null) lines.Add($"slice set {{{tx["index_letter"]}}} tx=1");
         var active = live.FirstOrDefault(s => s.GetValueOrDefault("active") == "1");
         if (active is not null) lines.Add($"slice set {{{active["index_letter"]}}} active=1");
-        if (full) lines.AddRange(PowerLines(transmit));
+        if (full)
+        {
+            lines.AddRange(PowerLines(transmit));
+            // One pair of scope lines per panadapter, addressed through the first slice that lives in it.
+            foreach (var s in live.GroupBy(x => x.GetValueOrDefault("pan", "")).Where(g => g.Key.Length > 0).Select(g => g.First()))
+                lines.AddRange(ScopeLines(s, "{pan" + s["index_letter"] + "}", pans));
+        }
 
         var label = LabelOf(active ?? live[0]);
         if (live.Count > 1) label += $" +{live.Count - 1}";
@@ -79,6 +94,19 @@ public static class SliceCapture
         yield return $"slice set {who} anf={G("anf", "0")}";
         yield return $"slice set {who} rfgain={G("rfgain", "0")}";
         yield return $"slice set {who} dax={G("dax", "0")}";
+    }
+
+    /// <summary>
+    /// The scope: width first, then centre. Last in a captured button on purpose: a slice the
+    /// button had to open arrives with a very wide default scope (David, 2026-09-19), and by then
+    /// everything that matters more has already been applied.
+    /// </summary>
+    private static IEnumerable<string> ScopeLines(IReadOnlyDictionary<string, string> slice, string who,
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? pans)
+    {
+        if (pans is null || !slice.TryGetValue("pan", out var handle) || !pans.TryGetValue(handle, out var pan)) yield break;
+        if (pan.TryGetValue("bandwidth", out var bw) && bw.Length > 0) yield return $"display pan set {who} bandwidth={bw}";
+        if (pan.TryGetValue("center", out var c) && c.Length > 0) yield return $"display pan set {who} center={c}";
     }
 
     private static IEnumerable<string> PowerLines(IReadOnlyDictionary<string, string> transmit)

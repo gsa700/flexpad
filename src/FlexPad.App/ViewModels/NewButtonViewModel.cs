@@ -170,7 +170,7 @@ public sealed class NewButtonViewModel : ViewModelBase
     public string[] SnapshotDetails { get; } =
     {
         "Basic: frequency, mode, antennas, filter",
-        "Full: adds step, AGC, noise tools, RF gain, DAX and TX power",
+        "Full: adds step, AGC, noise tools, RF gain, DAX, TX power and the scope's width and centre",
     };
 
     private int _snapshotScope;
@@ -232,8 +232,8 @@ public sealed class NewButtonViewModel : ViewModelBase
             case NewButtonKind.Snapshot:
                 var full = SnapshotDetail == 1;
                 var shot = SnapshotScope == 1
-                    ? SliceCapture.CaptureAll(_radio.Client.Slices, transmit, full)
-                    : SliceCapture.Capture(_radio.Client.Slices, transmit, full);
+                    ? SliceCapture.CaptureAll(_radio.Client.Slices, transmit, full, now: null, pans: _radio.Client.PanSnapshot())
+                    : SliceCapture.Capture(_radio.Client.Slices, transmit, full, now: null, pans: _radio.Client.PanSnapshot());
                 return (shot.Label, shot.Lines, null);
 
             case NewButtonKind.Band:

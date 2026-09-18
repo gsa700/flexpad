@@ -5,6 +5,19 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.13.0-beta] - 2026-09-19
+
+### Added
+- **Full captures record the scope.** A Full capture, single slice or all slices, now ends with each
+  panadapter's width and centre (`display pan set {panB} bandwidth=…` and `center=…`), so a slice
+  the button had to open no longer arrives with the radio's very wide default scope. One pair of
+  lines per panadapter; they come last, after everything that matters more. (David, 2026-09-19:
+  "the second receiver's panadapter display width is very wide".)
+- `{panA}`..`{panH}` placeholders: the panadapter of a slice by letter.
+
+### Changed
+- The radio client follows panadapter status (`sub pan all`).
+
 ## [0.12.2-beta] - 2026-09-19
 
 ### Fixed

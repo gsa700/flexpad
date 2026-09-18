@@ -51,7 +51,7 @@ profile, and so on.
 - **Capture** (in the guided start and in the editor): set the radio up the way you want it, then
   capture it as commands. *Active slice*
   takes one slice: Basic is frequency, mode, both antenna ports and the filter; Full adds tuning
-  step, AGC, noise tools, RF gain, DAX and TX power. *All slices* takes every open slice the same
+  step, AGC, noise tools, RF gain, DAX, TX power and the scope's width and centre. *All slices* takes every open slice the same
   way, plus which one transmits and which is active, behind a `slices A B` line that opens or
   closes slices until exactly those exist. Nothing is stored in the radio: the button is the whole
   snapshot, and you can read and edit every line of it.
@@ -62,7 +62,7 @@ profile, and so on.
   shows the pin; right-click → Runs on changes it, and + Button has entries to pin or unpin the
   whole grid at once.
 - **Placeholders**: `{slice}` is the button's slice (the active one unless the button is pinned), `{tx}` the transmit slice, `{A}`..`{H}` a slice
-  by letter, `{pan}` the active slice's panadapter (for `display pan set {pan} band=20`), all
+  by letter, `{pan}` the active slice's panadapter (for `display pan set {pan} band=20`), `{panB}` slice B's, all
   resolved from the radio's live status. `wait 0.5` pauses; `#` starts a comment; `slices A B` makes exactly those slices exist.
 - **FlexControl knob**: turning it tunes the active slice by its current tuning step; fast spins are
   honoured. The knob button and the three aux buttons each have press, hold and double-click,
