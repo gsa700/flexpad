@@ -69,3 +69,9 @@
   (PostMessage clicks for Build and the drag frame; chassis serial painted over in the console shot
   before publishing). Taking them showed `sub interlock all` is rejected by the radio on every
   connect, so it's gone; interlock status rides on `sub tx all`.
+- 2026-09-18: 0.10.0-beta. "Create a button from the radio's current state, all slices": David chose
+  the self-contained version over a global-profile button ("let's not mess with the global profiles
+  right now"). Capture → All slices (basic/full) plus a `slices A B` line that opens and closes
+  slices to match. Verified live through the app with one slice open: `slice create` answers with
+  the new index, the letter status follows at once, `{B}` resolved, `slice remove` closed it; radio
+  state identical before and after. Global-profile snapshot button remains an unbuilt idea.

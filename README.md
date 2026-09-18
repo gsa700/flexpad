@@ -42,12 +42,15 @@ profile, and so on.
 - **Build from choices**: in the editor, pick frequency, mode, RX and TX antenna, filter and step
   from lists the radio itself reports, press Build, and the command lines appear, ready to save or
   tweak. No command knowledge needed.
-- **Capture slice**: set the radio up the way you want it, then capture the active slice as
-  commands. Basic takes frequency, mode, both antenna ports and the filter; Full adds tuning step,
-  AGC, noise tools, RF gain, DAX and TX power. A new button is labelled from the frequency and mode.
+- **Capture**: set the radio up the way you want it, then capture it as commands. *Active slice*
+  takes one slice: Basic is frequency, mode, both antenna ports and the filter; Full adds tuning
+  step, AGC, noise tools, RF gain, DAX and TX power. *All slices* takes every open slice the same
+  way, plus which one transmits and which is active, behind a `slices A B` line that opens or
+  closes slices until exactly those exist. Nothing is stored in the radio: the button is the whole
+  snapshot, and you can read and edit every line of it.
 - **Placeholders**: `{slice}` is the active slice, `{tx}` the transmit slice, `{A}`..`{H}` a slice
   by letter, `{pan}` the active slice's panadapter (for `display pan set {pan} band=20`), all
-  resolved from the radio's live status. `wait 0.5` pauses; `#` starts a comment.
+  resolved from the radio's live status. `wait 0.5` pauses; `#` starts a comment; `slices A B` makes exactly those slices exist.
 - **FlexControl knob**: turning it tunes the active slice by its current tuning step; fast spins are
   honoured. The knob button and the three aux buttons each have press, hold and double-click,
   mapped in Setup to radio functions: cycle the tuning step, next slice, mute, TX on this slice,

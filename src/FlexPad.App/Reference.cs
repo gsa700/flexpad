@@ -35,6 +35,7 @@ public static class Reference
 
         Placeholders   {slice} active slice    {tx} transmit slice    {A}..{H} slice by letter    {pan} active slice's panadapter
         Other lines    wait 0.5  pauses        # starts a comment
+                       slices A B   open or close slices until exactly A and B exist (FlexPad does this, then waits)
 
         TUNING AND MODE
           slice tune {slice} 14.250                  retune (transverter bands need an XVTR definition)

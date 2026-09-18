@@ -5,6 +5,19 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.10.0-beta] - 2026-09-18
+
+### Added
+- **Capture all slices.** The editor's Capture menu (was "Capture slice") gains *All slices*, basic
+  and full: every open slice's state by letter, which slice transmits and which is active, and
+  with Full the TX power. Self-contained on purpose: the button is the whole snapshot, nothing is
+  saved in the radio. (David, 2026-09-18, who chose this over a global-profile button.)
+- **`slices A B` line** in the button language: FlexPad closes every open slice that is not listed,
+  opens slices until every listed letter exists (a new one starts as a copy of the active slice's
+  frequency, antenna and mode), and waits for the radio to report each change before the lines
+  that address slices by letter run. A wanted letter above a gap is reached through a filler slice
+  that is closed again.
+
 ## [0.9.2-beta] - 2026-09-16
 
 ### Fixed

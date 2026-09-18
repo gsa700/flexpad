@@ -73,11 +73,14 @@
     <Grid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,6,0,4">
       <TextBlock Grid.Column="0" Text="COMMANDS, ONE PER LINE" FontSize="12" FontWeight="Bold"
                  Foreground="{StaticResource DimBrush}" VerticalAlignment="Center"/>
-      <DropDownButton Grid.Column="1" Content="Capture slice" Margin="0,0,6,0">
+      <DropDownButton Grid.Column="1" Content="Capture" Margin="0,0,6,0">
         <DropDownButton.Flyout>
           <MenuFlyout>
-            <MenuItem Header="Basic: frequency, mode, antennas, filter" Command="{Binding CaptureBasicCommand}"/>
-            <MenuItem Header="Full: basic + step, AGC, NR/NB/ANF, RF gain, DAX, TX power" Command="{Binding CaptureFullCommand}"/>
+            <MenuItem Header="Active slice, basic: frequency, mode, antennas, filter" Command="{Binding CaptureBasicCommand}"/>
+            <MenuItem Header="Active slice, full: basic + step, AGC, NR/NB/ANF, RF gain, DAX, TX power" Command="{Binding CaptureFullCommand}"/>
+            <Separator/>
+            <MenuItem Header="All slices, basic: every open slice, TX and active flags" Command="{Binding CaptureAllBasicCommand}"/>
+            <MenuItem Header="All slices, full: the same with each slice's full state" Command="{Binding CaptureAllFullCommand}"/>
           </MenuFlyout>
         </DropDownButton.Flyout>
       </DropDownButton>

@@ -24,6 +24,8 @@ public sealed class ButtonEditorViewModel : ViewModelBase
         ClearColorCommand = new RelayCommand(() => ColorHex = "");
         CaptureBasicCommand = new RelayCommand(() => Capture(false));
         CaptureFullCommand = new RelayCommand(() => Capture(true));
+        CaptureAllBasicCommand = new RelayCommand(() => CaptureAll(false));
+        CaptureAllFullCommand = new RelayCommand(() => CaptureAll(true));
         BuildCommand = new RelayCommand(Build);
         PrepareBuilder();
     }
@@ -115,6 +117,8 @@ public sealed class ButtonEditorViewModel : ViewModelBase
     public RelayCommand ClearColorCommand { get; }
     public RelayCommand CaptureBasicCommand { get; }
     public RelayCommand CaptureFullCommand { get; }
+    public RelayCommand CaptureAllBasicCommand { get; }
+    public RelayCommand CaptureAllFullCommand { get; }
 
     private string _label;
     public string Label { get => _label; set => SetProperty(ref _label, value); }
@@ -156,7 +160,7 @@ public sealed class ButtonEditorViewModel : ViewModelBase
 
     public string Hint =>
         "{slice} = active slice   {tx} = transmit slice   {A}..{H} = slice by letter\n" +
-        "wait 0.5 pauses   # starts a comment   hotkey: F1, Ctrl+1, Alt+Shift+X";
+        "wait 0.5 pauses   slices A B opens/closes slices to match   # starts a comment   hotkey: F1, Ctrl+1, Alt+Shift+X";
 
     /// <summary>Append lines on a fresh line, never splitting one the user is typing.</summary>
     public void Insert(IEnumerable<string> lines)
@@ -177,6 +181,24 @@ public sealed class ButtonEditorViewModel : ViewModelBase
             Insert(lines);
             if (string.IsNullOrWhiteSpace(Label) || Label == "New") Label = label;
             CaptureStatus = $"Captured {(full ? "full" : "basic")} state of the active slice.";
+        }
+        catch (SequenceException ex)
+        {
+            CaptureStatus = ex.Message;
+        }
+    }
+
+    /// <summary>Every open slice, behind a <c>slices</c> line that opens and closes slices to match.</summary>
+    private void CaptureAll(bool full)
+    {
+        try
+        {
+            var (label, lines) = SliceCapture.CaptureAll(_radio.Client.Slices,
+                _radio.Client.Transmit.ToDictionary(kv => kv.Key, kv => kv.Value), full);
+            Insert(lines);
+            if (string.IsNullOrWhiteSpace(Label) || Label == "New") Label = label;
+            var n = _radio.Client.Slices.Live().Count;
+            CaptureStatus = $"Captured {(full ? "full" : "basic")} state of {n} slice{(n == 1 ? "" : "s")}. The button will open or close slices to match.";
         }
         catch (SequenceException ex)
         {
