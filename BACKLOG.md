@@ -75,3 +75,5 @@
   slices to match. Verified live through the app with one slice open: `slice create` answers with
   the new index, the letter status follows at once, `{B}` resolved, `slice remove` closed it; radio
   state identical before and after. Global-profile snapshot button remains an unbuilt idea.
+  David after updating: "updates went well". He then asked whether the new-button dialog, now
+  "really busy and confusing", should become a wizard with the basic function as the default.
