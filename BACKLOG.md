@@ -89,3 +89,18 @@
   unpin under + Button. Shipped without asking first, like the other bug-type feedback. Verified on
   Windows: the submenu was driven by keyboard and "Slice A" landed in the scratch config.
 
+- 2026-09-19: 0.12.0-beta verified on Linux at David's request. Fedora (linux-x64, GNOME Wayland via
+  XWayland, 100 % scaling): all five windows open, render and fit, connected to the radio; by
+  keyboard, Enter-Enter in the guided start made a button pinned to A, + Button's Pin and Unpin
+  worked, the context menu's Runs on submenu pinned a band button (Menu key: Shift+F10 is not the
+  shortcut on Linux), a pinned no-op ran on slice A, and a button pinned to an unopened slice
+  refused and sent nothing. Pi CM5 (linux-arm64, labwc): main, New button and Band set launch and
+  render. Not verified on Linux: drag (no pointer injection under Wayland; David confirmed it by
+  hand at 0.9.1) and the `slices` line (Core logic, verified live from Windows).
+  **Incident:** the first context-menu attempt used Shift+F10, the menu never opened, and the final
+  Enter fired the focused "160m" button, which held a real band command: David's radio sat on 160 m
+  for a couple of minutes until the state check caught it; restored with `band=80` to 3.925 LSB
+  exactly. Test configs now carry comment-only commands and the radio is read before and after.
+  Working input route on that box: `ydotool key` (uinput) behind a guard that the focused X window
+  belongs to the test pid. `xdotool key` (XTEST) and `xdotool key --window` (XSendEvent) are both
+  ignored. Tab order on the main window: the four toolbar buttons, then the band row, then the grid.
