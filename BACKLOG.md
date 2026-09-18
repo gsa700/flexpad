@@ -109,3 +109,4 @@
   David on his real grid: "pinned all buttons to slice A, works FB". 0.12.0-beta confirmed.
 - 2026-09-19: 0.12.1-beta. David: "make the pinned button also make its slice active". Done in
   CommandSequence.Run after the lines have run; four new tests in TargetSliceTests.
+  David after updating both: "pinned buttons make the slice active FB". 0.12.1-beta confirmed.
