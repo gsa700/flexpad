@@ -104,3 +104,5 @@
   Working input route on that box: `ydotool key` (uinput) behind a guard that the focused X window
   belongs to the test pid. `xdotool key` (XTEST) and `xdotool key --window` (XSendEvent) are both
   ignored. Tab order on the main window: the four toolbar buttons, then the band row, then the grid.
+  David, same day, after trying 0.12.0 on Fedora by hand: "drag is FB on linux". That closes the one gap
+  the remote check could not cover.
