@@ -106,3 +106,4 @@
   ignored. Tab order on the main window: the four toolbar buttons, then the band row, then the grid.
   David, same day, after trying 0.12.0 on Fedora by hand: "drag is FB on linux". That closes the one gap
   the remote check could not cover.
+  David on his real grid: "pinned all buttons to slice A, works FB". 0.12.0-beta confirmed.
