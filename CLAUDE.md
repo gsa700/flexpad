@@ -6,7 +6,7 @@ radio; a FlexControl USB knob tunes the active slice and its buttons map to acti
 buttons. Exists because SmartSDR memories cannot store RX/TX antenna ports, which matters for
 transverters on XVTA/XVTB, and because the FlexControl only works while SmartSDR is running.
 **.NET 10 + Avalonia 12.1**, MVVM. Windows / Linux / Raspberry Pi (arm64). GPLv3. By David
-Erickson (AB0R). Status: **0.10.0-beta**.
+Erickson (AB0R). Status: **0.11.0-beta**.
 
 Fourth app in the station-tools family. **LP-100A Monitor** (`~/Documents/Programming/lp100a-monitor`)
 is the family's reference template and **W2 Monitor** (`~/Documents/Programming/w2-monitor-x`) its
@@ -28,7 +28,7 @@ dotnet run --project src/FlexPad.App -- --setup    # open Setup on launch (debug
 dotnet test                                    # xUnit suite — all pure FlexPad.Core logic
 ```
 
-Runtime switches: `--setup`, `--edit`, `--bands` (open a window at launch, for screenshots), `--exit-for-update` (exit the way an update restart does, 4 s after launch, for testing), and the install pair `--install` / `--uninstall` (both take `--quiet`).
+Runtime switches: `--setup`, `--new` (the new-button window), `--edit` (the editor on the first button), `--bands` (open a window at launch, for screenshots), `--exit-for-update` (exit the way an update restart does, 4 s after launch, for testing), and the install pair `--install` / `--uninstall` (both take `--quiet`).
 
 Solution: `FlexPad.slnx`. Output assembly is `FlexPad` (`FlexPad.exe` on Windows).
 
@@ -60,7 +60,9 @@ src/
                   #              log; marshals to the UI thread; runs sequences; knob actions),
                   #              AppConfig/ConfigStore (Python-compatible JSON), KnobPort (find the
                   #              knob by USB id), InstallService, UpdateService, CrashLog
-                  #   ViewModels/ MainWindow (grid + status), ButtonEditor, Console, Setup
+                  #   ViewModels/ MainWindow (grid + status), NewButton (guided start for a new
+                  #              button; holds a ButtonEditor for the shared details), ButtonEditor,
+                  #              Console, Setup
                   #   Views/     MainWindow, ButtonEditorWindow, ConsoleWindow, ReferenceWindow,
                   #              SetupWindow (tabs: Radio, Knob, Updates), ConfirmWindow
                   #   Reference.cs   the cheat sheet, example snippets, and the swatch palette

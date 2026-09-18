@@ -5,6 +5,23 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.11.0-beta] - 2026-09-18
+
+### Added
+- **Guided start for a new button.** + Button → New button… now opens a two-page window instead
+  of the editor. Page one asks what the button should do: go to a frequency (preselected, and
+  filled in from the active slice, so Next then Save makes a working button), remember what the
+  radio is doing now (active slice or all slices, basic or full), change band (or jump to the
+  band-set generator for a whole row), a common action (switch antenna, move TX to a slice, make a
+  slice active, close a slice, set TX power), or write the commands yourself. Page two names it,
+  colours it, and shows the commands it will send; Edit commands… carries it into the full editor.
+  (David, 2026-09-18: the dialog was "getting really busy and confusing".)
+
+### Changed
+- **The editor lost its Build from choices panel**, which moved into the guided start (David:
+  "remove it from the editor"). Right-click → Edit still opens the editor directly.
+- Debug switches: `--new` opens the guided start, `--edit` now opens the editor on the first button.
+
 ## [0.10.0-beta] - 2026-09-18
 
 ### Added

@@ -39,10 +39,17 @@ profile, and so on.
   transverter ports, phone or CW. A second set covers AM broadcast, the shortwave broadcast bands,
   11 m CB and WWV, in AM. They go in their own row along the bottom of the window; any button can
   be moved into or out of that row from the editor.
-- **Build from choices**: in the editor, pick frequency, mode, RX and TX antenna, filter and step
-  from lists the radio itself reports, press Build, and the command lines appear, ready to save or
-  tweak. No command knowledge needed.
-- **Capture**: set the radio up the way you want it, then capture it as commands. *Active slice*
+- **New button, guided**: + Button → New button… asks what the button should do. *Go to a
+  frequency* is preselected and filled in from where the radio is now, with mode and antenna lists
+  the radio itself reports, so Next then Save makes a working button. The other choices: remember
+  what the radio is doing now, change band, a common action (switch antenna, move TX, pick or close
+  a slice, set power), or write the commands yourself. Page two names it and shows the commands it
+  will send. No command knowledge needed.
+- **Editor** for an existing button (right-click → Edit), or from the guided start via Edit
+  commands…: label, hotkey, colour, row, and the command list with Capture, Insert example and the
+  Reference beside it.
+- **Capture** (in the guided start and in the editor): set the radio up the way you want it, then
+  capture it as commands. *Active slice*
   takes one slice: Basic is frequency, mode, both antenna ports and the filter; Full adds tuning
   step, AGC, noise tools, RF gain, DAX and TX power. *All slices* takes every open slice the same
   way, plus which one transmits and which is active, behind a `slices A B` line that opens or
@@ -70,9 +77,17 @@ outlined.
 
 ![Dragging a button onto another](docs/screenshots/drag.png)
 
-The editor after pressing Build: the choices came from the radio, the commands are ready to save.
+A new button starts with a question. The first choice is filled in from where the radio is now.
 
-![Button editor with Build from choices](docs/screenshots/editor.png)
+![New button: what should it do](docs/screenshots/newbutton.png)
+
+Page two names it and shows what it will send.
+
+![New button: name it](docs/screenshots/newbutton-name.png)
+
+The editor, for an existing button or for writing commands by hand.
+
+![Button editor](docs/screenshots/editor.png)
 
 The band-set generator, amateur set, "change band only".
 

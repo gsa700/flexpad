@@ -97,7 +97,11 @@ public partial class App : Application
                 if (updateFailed) ShowSetup(SetupViewModel.UpdatesTab);
                 else if (openSetup) ShowSetup();
                 else if (Environment.GetCommandLineArgs().Any(a => a.Equals("--edit", StringComparison.OrdinalIgnoreCase)))
-                    _mainVm.Add();   // debug: open the new-button editor straight away
+                {
+                    if (_config.Buttons.Count > 0) _mainVm.Edit(_config.Buttons[0]);   // debug: open the editor on the first button
+                }
+                else if (Environment.GetCommandLineArgs().Any(a => a.Equals("--new", StringComparison.OrdinalIgnoreCase)))
+                    _mainVm.Add();   // debug: open the new-button window straight away
                 else if (Environment.GetCommandLineArgs().Any(a => a.Equals("--bands", StringComparison.OrdinalIgnoreCase)))
                     Fire(MakeBandSetAsync, "band set");   // debug: open the band-set generator straight away
 
@@ -132,6 +136,28 @@ public partial class App : Application
     private async Task EditButtonAsync(ButtonConfig button, bool isNew)
     {
         if (_main is null) return;
+
+        // A new button starts in the guided window. It either finishes there, hands over to the
+        // band-set generator, or carries what was chosen into the full editor below.
+        if (isNew)
+        {
+            var start = new NewButtonViewModel(button, _radio);
+            var startWin = new NewButtonWindow { DataContext = start };
+            WindowMemory.Restore(startWin, _config.Window.NewButtonX, _config.Window.NewButtonY);
+            Track(startWin);
+            var choice = await startWin.ShowDialog<string?>(_main);
+            if (choice == NewButtonWindow.Bands) { await MakeBandSetAsync(); return; }
+            if (choice is null) return;
+            start.Details.ApplyTo(button);
+            if (choice == NewButtonWindow.Save)
+            {
+                _config.Buttons.Add(button);
+                SaveConfig();
+                RebuildButtons();
+                return;
+            }
+        }
+
         var vm = new ButtonEditorViewModel(button, _radio, isNew);
         var win = new ButtonEditorWindow { DataContext = vm };
         var w = _config.Window;
@@ -185,6 +211,14 @@ public partial class App : Application
     }
 
     public void OpenBandSet() => Fire(MakeBandSetAsync, "band set");
+
+    public void NotifyNewButtonClosing(Window w)
+    {
+        if (!_memory.ContainsKey(w)) return;   // already recorded
+        var p = Pos(w);
+        _config.Window.NewButtonX = p.X; _config.Window.NewButtonY = p.Y;
+        _memory.Remove(w);
+    }
 
     public void NotifyBandSetClosing(Window w)
     {

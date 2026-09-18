@@ -77,3 +77,7 @@
   state identical before and after. Global-profile snapshot button remains an unbuilt idea.
   David after updating: "updates went well". He then asked whether the new-button dialog, now
   "really busy and confusing", should become a wizard with the basic function as the default.
+- 2026-09-18: 0.11.0-beta. Guided start for new buttons (NewButtonWindow/NewButtonViewModel, which
+  holds a ButtonEditorViewModel for the shared details; ButtonActions in Core for the common
+  actions), Build panel removed from the editor at David's word. Verified on Windows by posting
+  Enter twice to the window: a "3.925 LSB" button with four lines landed in the scratch config.
