@@ -228,6 +228,20 @@ public static partial class CommandSequence
                 if (stopOnError) return false;
             }
         }
+
+        // A pinned button brings the front panel and the knob along: its slice becomes the active
+        // one (David, 2026-09-19). Last, so a button whose own lines open the slice still works, and
+        // a run that stopped on an error leaves the focus where it was.
+        if (!string.IsNullOrEmpty(target) && slices.ByLetter(target) is { } own && slices.Active() != own)
+        {
+            var cmd = $"slice set {own} active=1";
+            try
+            {
+                var (code, text) = send(cmd);
+                if (code != 0) { report?.Invoke($"error 0x{code:X} {text} <- {cmd}"); ok = false; }
+            }
+            catch (Exception ex) { report?.Invoke($"error: {ex.Message}"); ok = false; }
+        }
         return ok;
     }
 }

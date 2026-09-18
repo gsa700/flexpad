@@ -35,7 +35,7 @@ public static class Reference
 
         Placeholders   {slice} active slice    {tx} transmit slice    {A}..{H} slice by letter    {pan} active slice's panadapter
         Runs on        each button follows the active slice, or is pinned to a letter (right-click, Runs on):
-                       a pinned button's {slice} and {pan} always mean that slice
+                       a pinned button's {slice} and {pan} always mean that slice, and it makes that slice active when done
         Other lines    wait 0.5  pauses        # starts a comment
                        slices A B   open or close slices until exactly A and B exist (FlexPad does this, then waits)
 

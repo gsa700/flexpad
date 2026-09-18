@@ -107,3 +107,5 @@
   David, same day, after trying 0.12.0 on Fedora by hand: "drag is FB on linux". That closes the one gap
   the remote check could not cover.
   David on his real grid: "pinned all buttons to slice A, works FB". 0.12.0-beta confirmed.
+- 2026-09-19: 0.12.1-beta. David: "make the pinned button also make its slice active". Done in
+  CommandSequence.Run after the lines have run; four new tests in TargetSliceTests.

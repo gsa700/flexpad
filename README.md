@@ -57,7 +57,8 @@ profile, and so on.
   snapshot, and you can read and edit every line of it.
 - **Runs on**: a button either follows whichever slice is active or is pinned to a slice letter. A
   new button is pinned to the slice it was made from, so a memory made on slice A still lands on A
-  after you open a second receiver and B becomes active. A small letter in the button's corner
+  after you open a second receiver and B becomes active, and pressing it makes A the active slice
+  again so the front panel and the knob follow. A small letter in the button's corner
   shows the pin; right-click → Runs on changes it, and + Button has entries to pin or unpin the
   whole grid at once.
 - **Placeholders**: `{slice}` is the button's slice (the active one unless the button is pinned), `{tx}` the transmit slice, `{A}`..`{H}` a slice

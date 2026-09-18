@@ -5,6 +5,15 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.12.1-beta] - 2026-09-19
+
+### Changed
+- **A pinned button makes its slice the active one.** After its commands have run, a button pinned
+  to a slice letter sends `slice set <n> active=1` if that slice is not already active, so the
+  front panel and the FlexControl knob follow the memory you just recalled. It happens last: a
+  button whose own lines open the slice still works, and a run that stops on an error leaves the
+  focus where it was. Unpinned buttons are unchanged. (David, 2026-09-19, after using 0.12.0.)
+
 ## [0.12.0-beta] - 2026-09-19
 
 ### Added

@@ -45,7 +45,45 @@ public class TargetSliceTests
             new[] { "slice tune {slice} 7.200", "slice set {slice} mode=LSB", "filt {slice} -2900 -100" },
             t, c => { sent.Add(c); return (0, ""); }, stopOnError: true, report: null, sleep: _ => { }, target: "A");
         Assert.True(ok);
-        Assert.Equal(new[] { "slice tune 0 7.200", "slice set 0 mode=LSB", "filt 0 -2900 -100" }, sent);
+        // ...and then makes that slice the active one, so the front panel and the knob follow it.
+        Assert.Equal(new[] { "slice tune 0 7.200", "slice set 0 mode=LSB", "filt 0 -2900 -100", "slice set 0 active=1" }, sent);
+    }
+
+    [Fact]
+    public void No_activate_when_the_pinned_slice_is_already_active_or_the_button_is_unpinned()
+    {
+        var t = AandB_withBActive();
+        var sent = new List<string>();
+        CommandSequence.Run(new[] { "slice tune {slice} 432.100" }, t, c => { sent.Add(c); return (0, ""); },
+            stopOnError: true, report: null, sleep: _ => { }, target: "B");
+        Assert.Equal(new[] { "slice tune 1 432.100" }, sent);
+
+        sent.Clear();
+        CommandSequence.Run(new[] { "slice tune {slice} 432.100" }, t, c => { sent.Add(c); return (0, ""); },
+            stopOnError: true, report: null, sleep: _ => { });
+        Assert.Equal(new[] { "slice tune 1 432.100" }, sent);
+    }
+
+    [Fact]
+    public void A_run_that_stops_on_an_error_leaves_the_focus_alone()
+    {
+        var t = AandB_withBActive();
+        var sent = new List<string>();
+        var ok = CommandSequence.Run(new[] { "slice tune {slice} 999" }, t,
+            c => { sent.Add(c); return (0x50000001, "out of range"); },
+            stopOnError: true, report: _ => { }, sleep: _ => { }, target: "A");
+        Assert.False(ok);
+        Assert.DoesNotContain("slice set 0 active=1", sent);
+    }
+
+    [Fact]
+    public void A_pinned_button_that_opens_its_own_slice_activates_it_afterwards()
+    {
+        var radio = new FakeRadio("A");
+        var ok = CommandSequence.Run(new[] { "slices A B", "slice tune {slice} 432.100" }, radio.Slices, radio.Send,
+            stopOnError: true, report: null, sleep: _ => { }, target: "B");
+        Assert.True(ok);
+        Assert.Equal("slice set 1 active=1", radio.Sent.Last());
     }
 
     [Fact]
