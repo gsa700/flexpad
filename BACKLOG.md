@@ -140,3 +140,20 @@
 - 2026-09-19: 0.15.0-beta. David: "another nice feature would be an update preset option in the right
   click menu". Right-click -> Update from the radio: SliceCapture.ShapeOf reads the button back (all
   slices / single, basic / full), the same capture is taken again, a confirm shows where it will tune.
+
+## Where we left off (2026-09-19)
+
+David: "let's let that soak for a while and we'll pick it up another time." Released and on both
+his machines through the updater: 0.15.0-beta. Waiting on his use, not on any work:
+
+- **Unconfirmed by David:** 0.14.1 (captures no longer stale; volume, average, dB range captured)
+  and 0.15.0 (right-click, Update from the radio). The natural test of both is one action: set up
+  both receivers, right-click "VHF & UHF", Update from the radio, then press it from single-slice.
+- **Never sent to his radio by me, only by his buttons:** nothing outstanding. The scope lines
+  (`display pan set … bandwidth/center/min_dbm/max_dbm/average/fps`) were all accepted on 2026-09-19.
+- **Ideas parked, not requested:** a global-profile snapshot button (he said not now); single-slice
+  presets that close slice B (he chose "default to slice A" instead; by hand it is `slices A` as the
+  first line); global hotkeys; headless flags; syncing the config between his Windows and Fedora
+  machines, which keep separate settings files (this bit him once with the bulk pin).
+- **Station, not FlexPad:** the 70 cm XVTR entry is corrected (432/28) and verified on receive; he
+  has no proper 70 cm antenna up yet, so 70 cm presets are untested in anger.
