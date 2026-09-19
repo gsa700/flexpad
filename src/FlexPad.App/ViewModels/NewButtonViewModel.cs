@@ -170,7 +170,7 @@ public sealed class NewButtonViewModel : ViewModelBase
     public string[] SnapshotDetails { get; } =
     {
         "Basic: frequency, mode, antennas, filter",
-        "Full: adds step, AGC, noise tools, RF gain, DAX, TX power and the scope's width and centre",
+        "Full: adds step, AGC, noise tools, RF gain, DAX, volume, TX power and the scope settings",
     };
 
     private int _snapshotScope;

@@ -5,6 +5,25 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.14.1-beta] - 2026-09-19
+
+### Fixed
+- **Captures recorded stale values for anything a FlexPad button had set.** The radio pushes a
+  change to every client except the one that made it, and re-subscribing does not re-send it, so
+  after a button set AGC-T (or volume, or anything else) FlexPad went on believing the old value
+  and the next capture wrote that into the new preset. Seen on David's radio: a button holding
+  AGC-T 35 and 60 while the radio was at 40 and 40. When the radio accepts a setting, FlexPad now
+  applies it to its own picture of the radio (`StatusEcho`), exactly as the radio reports it to
+  every other client. Proven with two connections side by side.
+
+### Added
+- Full captures also record, per slice, **volume, pan and mute**, so a slice the button has to open
+  no longer comes up at the radio's default level; and for each panadapter the **dB range,
+  averaging and frame rate** along with the width and centre. Every one of those commands was
+  accepted by the 8600M.
+
+Buttons captured before this release should be captured again.
+
 ## [0.14.0-beta] - 2026-09-19
 
 ### Changed

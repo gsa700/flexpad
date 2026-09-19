@@ -243,19 +243,7 @@ public sealed partial class RadioClient : IDisposable
                 break;
             case LineKind.Status:
                 OnTraffic?.Invoke(Traffic.Status, line);
-                if (Slices.Merge(p.Text)) StateChanged?.Invoke();
-                else if (p.Text.StartsWith("transmit ", StringComparison.Ordinal))
-                    foreach (var (k, v) in FlexProtocol.KeyValues(p.Text[9..])) Transmit[k] = v;
-                else if (p.Text.StartsWith("interlock ", StringComparison.Ordinal))
-                    foreach (var (k, v) in FlexProtocol.KeyValues(p.Text[10..])) Interlock[k] = v;
-                else if (p.Text.StartsWith("atu ", StringComparison.Ordinal))
-                    foreach (var (k, v) in FlexProtocol.KeyValues(p.Text[4..])) Atu[k] = v;
-                else if (p.Text.StartsWith("amplifier ", StringComparison.Ordinal))
-                    MergeKeyed(Amplifiers, p.Text[10..]);   // amplifier <handle> key=value... - incremental like slices
-                else if (p.Text.StartsWith("display pan ", StringComparison.Ordinal))
-                    MergeKeyed(Pans, p.Text[12..]);          // display pan <handle> center=… bandwidth=…
-                else if (p.Text.StartsWith("xvtr ", StringComparison.Ordinal))
-                    MergeKeyed(Xvtrs, p.Text[5..]);          // xvtr <index> name=2m rf_freq=144 ...
+                ApplyStatus(p.Text);
                 break;
             case LineKind.Version:
                 Version = p.Text;
@@ -269,6 +257,24 @@ public sealed partial class RadioClient : IDisposable
                 OnTraffic?.Invoke(Traffic.Received, line);
                 break;
         }
+    }
+
+    /// <summary>Merge one status body into the tables: from the radio, or our own accepted setting.</summary>
+    private void ApplyStatus(string body)
+    {
+        if (Slices.Merge(body)) StateChanged?.Invoke();
+        else if (body.StartsWith("transmit ", StringComparison.Ordinal))
+            foreach (var (k, v) in FlexProtocol.KeyValues(body[9..])) Transmit[k] = v;
+        else if (body.StartsWith("interlock ", StringComparison.Ordinal))
+            foreach (var (k, v) in FlexProtocol.KeyValues(body[10..])) Interlock[k] = v;
+        else if (body.StartsWith("atu ", StringComparison.Ordinal))
+            foreach (var (k, v) in FlexProtocol.KeyValues(body[4..])) Atu[k] = v;
+        else if (body.StartsWith("amplifier ", StringComparison.Ordinal))
+            MergeKeyed(Amplifiers, body[10..]);   // amplifier <handle> key=value... - incremental like slices
+        else if (body.StartsWith("display pan ", StringComparison.Ordinal))
+            MergeKeyed(Pans, body[12..]);          // display pan <handle> center=… bandwidth=…
+        else if (body.StartsWith("xvtr ", StringComparison.Ordinal))
+            MergeKeyed(Xvtrs, body[5..]);          // xvtr <index> name=2m rf_freq=144 ...
     }
 
     /// <summary>Merge <c>&lt;key&gt; k=v k=v…</c> into a per-key attribute table.</summary>
@@ -313,6 +319,9 @@ public sealed partial class RadioClient : IDisposable
             lock (_lock) _pending.Remove(seq);
             return (-1, $"no reply within {CommandTimeout.TotalSeconds:0}s");
         }
+        // The radio pushes a change to every client except the one that made it (StatusEcho), so an
+        // accepted setting is applied to our own tables here, or they go stale and captures lie.
+        if (holder[0].Item1 == 0 && StatusEcho.For(command) is { } echo) ApplyStatus(echo);
         return holder[0];
     }
 }

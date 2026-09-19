@@ -43,7 +43,8 @@ public class SliceCaptureTests
         Assert.Contains("slice set {slice} dax=1", lines);
         Assert.Contains("transmit set rfpower=85", lines);
         Assert.Contains("transmit set tunepower=42", lines);
-        Assert.Equal(15, lines.Count);
+        Assert.Contains(lines, l => l.StartsWith("slice set {slice} audio_level="));   // volume, pan and mute, since 0.14.1
+        Assert.Equal(16, lines.Count);
     }
 
     [Fact]

@@ -51,7 +51,8 @@ profile, and so on.
 - **Capture** (in the guided start and in the editor): set the radio up the way you want it, then
   capture it as commands. *Active slice*
   takes one slice: Basic is frequency, mode, both antenna ports and the filter; Full adds tuning
-  step, AGC, noise tools, RF gain, DAX, TX power and the scope's width and centre. *All slices* takes every open slice the same
+  step, AGC, noise tools, RF gain, DAX, volume, TX power and the scope (width, centre, dB range,
+  averaging, frame rate). *All slices* takes every open slice the same
   way, plus which one transmits and which is active, behind a `slices A B` line that opens or
   closes slices until exactly those exist. Nothing is stored in the radio: the button is the whole
   snapshot, and you can read and edit every line of it.

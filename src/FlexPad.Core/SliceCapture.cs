@@ -11,8 +11,8 @@ namespace FlexPad.Core;
 /// </summary>
 public static class SliceCapture
 {
-    /// <param name="full">Add tuning step, AGC, noise tools, RF gain, DAX, TX power and the scope's
-    /// width and centre.</param>
+    /// <param name="full">Add tuning step, AGC, noise tools, RF gain, DAX, volume/pan/mute, TX power and
+    /// the scope: width, centre, dB range, averaging and frame rate.</param>
     /// <param name="pans">Panadapters by handle, from the radio client; null or a missing handle just
     /// leaves the scope lines out.</param>
     /// <returns>A suggested button label and the lines.</returns>
@@ -94,6 +94,8 @@ public static class SliceCapture
         yield return $"slice set {who} anf={G("anf", "0")}";
         yield return $"slice set {who} rfgain={G("rfgain", "0")}";
         yield return $"slice set {who} dax={G("dax", "0")}";
+        // Volume, pan and mute: a slice the button had to open otherwise comes up at the radio's default level.
+        yield return $"slice set {who} audio_level={G("audio_level", "50")} audio_pan={G("audio_pan", "50")} audio_mute={G("audio_mute", "0")}";
     }
 
     /// <summary>
@@ -107,6 +109,9 @@ public static class SliceCapture
         if (pans is null || !slice.TryGetValue("pan", out var handle) || !pans.TryGetValue(handle, out var pan)) yield break;
         if (pan.TryGetValue("bandwidth", out var bw) && bw.Length > 0) yield return $"display pan set {who} bandwidth={bw}";
         if (pan.TryGetValue("center", out var c) && c.Length > 0) yield return $"display pan set {who} center={c}";
+        // The look of the trace: dB range, averaging, frame rate. All accepted by the 8600M, 2026-09-19.
+        foreach (var key in new[] { "min_dbm", "max_dbm", "average", "fps" })
+            if (pan.TryGetValue(key, out var v) && v.Length > 0) yield return $"display pan set {who} {key}={v}";
     }
 
     private static IEnumerable<string> PowerLines(IReadOnlyDictionary<string, string> transmit)

@@ -130,4 +130,10 @@
   Done: absent `slice` key = A, `"active"` = follow the active slice, badge marks exceptions only,
   focus follows only buttons that address their own slice. Closing slice B from a single-slice
   preset stays available by hand (`slices A` as the first line) but is not built into anything.
-
+- 2026-09-19: 0.14.1-beta. David: the recaptured VHF & UHF preset "didn't preserve the slice B volume
+  or AGC-T", and display average came back wrong. Volume and average were simply not captured. AGC-T
+  was captured stale: his button held 35/60 while the radio sat at 40/40. Tests on slice B (guarded,
+  restored): AGC-T set from my connection never showed in my own status yet read back correctly on a
+  fresh connection; with two connections, the OTHER one receives the push. So the radio never echoes
+  a client's own changes. Fix: StatusEcho applied in RadioClient.Send. Capture additions: audio_level,
+  audio_pan, audio_mute per slice; pan min_dbm, max_dbm, average, fps.

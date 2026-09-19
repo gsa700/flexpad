@@ -122,4 +122,30 @@ public class CaptureAllTests
         Assert.Equal("display pan set 0x40000001 band=20", CommandSequence.Substitute("display pan set {pan} band=20", t));   // B is active
         Assert.Contains("no slice C", Assert.Throws<SequenceException>(() => CommandSequence.Substitute("x {panC}", t)).Message);
     }
+
+    [Fact]
+    public void Full_records_volume_pan_and_mute_per_slice_and_the_look_of_the_scope()
+    {
+        var t = TwoSlices();
+        t.Merge("slice 0 pan=0x40000000 audio_level=35 audio_pan=50 audio_mute=0");
+        t.Merge("slice 1 pan=0x40000001 audio_level=12 audio_pan=80 audio_mute=1");
+        var pans = new Dictionary<string, IReadOnlyDictionary<string, string>>
+        {
+            ["0x40000001"] = new Dictionary<string, string>
+            {
+                ["bandwidth"] = "0.049778", ["center"] = "432.100549", ["min_dbm"] = "-154.12", ["max_dbm"] = "-59.12",
+                ["average"] = "62", ["fps"] = "25", ["weighted_average"] = "0",
+            },
+        };
+        var lines = SliceCapture.CaptureAll(t, new Dictionary<string, string>(), full: true, When, pans).Lines;
+        Assert.Contains("slice set {A} audio_level=35 audio_pan=50 audio_mute=0", lines);
+        Assert.Contains("slice set {B} audio_level=12 audio_pan=80 audio_mute=1", lines);
+        Assert.Equal(new[]
+        {
+            "display pan set {panB} bandwidth=0.049778", "display pan set {panB} center=432.100549",
+            "display pan set {panB} min_dbm=-154.12", "display pan set {panB} max_dbm=-59.12",
+            "display pan set {panB} average=62", "display pan set {panB} fps=25",
+        }, lines.Skip(lines.Count - 6));
+        Assert.DoesNotContain(SliceCapture.CaptureAll(t, new Dictionary<string, string>(), full: false, When, pans).Lines, l => l.Contains("audio_level"));
+    }
 }

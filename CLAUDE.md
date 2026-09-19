@@ -6,7 +6,7 @@ radio; a FlexControl USB knob tunes the active slice and its buttons map to acti
 buttons. Exists because SmartSDR memories cannot store RX/TX antenna ports, which matters for
 transverters on XVTA/XVTB, and because the FlexControl only works while SmartSDR is running.
 **.NET 10 + Avalonia 12.1**, MVVM. Windows / Linux / Raspberry Pi (arm64). GPLv3. By David
-Erickson (AB0R). Status: **0.14.0-beta**.
+Erickson (AB0R). Status: **0.14.1-beta**.
 
 Fourth app in the station-tools family. **LP-100A Monitor** (`~/Documents/Programming/lp100a-monitor`)
 is the family's reference template and **W2 Monitor** (`~/Documents/Programming/w2-monitor-x`) its
@@ -78,6 +78,11 @@ Avalonia shell. Put new parsing/decision logic in Core with tests, not in view-m
 - TCP port 4992, one text line per message. We send `C<seq>|<command>`; the radio answers
   `R<seq>|<hex code>|<text>` (code 0 = success). `V…`/`H…` once on connect, `M…|text` messages,
   `S<handle>|<object> key=value…` status after `sub slice all` / `sub tx all` (interlock status comes with tx; `sub interlock all` is rejected).
+- **The radio does not echo a client's own changes.** A `slice set`, `display pan set` or `transmit set` from client X is
+  applied, pushed to every OTHER client as status, and never echoed to the client that made it; re-sending `sub … all` does
+  not re-dump (two-connection test, 2026-09-19). `RadioClient.Send` therefore merges `StatusEcho.For(command)` into its own
+  tables on a code-0 reply, or captures record stale values. To read a value for certain, use a fresh connection.
+  Verified applied this way: `agc_threshold`, `audio_level`, pan `average`; accepted: pan `fps`, `min_dbm`, `max_dbm`.
 - **Slice status is incremental** — a retune sends `RF_frequency` alone — so `SliceTable.Merge`
   merges, never replaces. Placeholders resolve from it: `{slice}` = `active=1`, `{tx}` = `tx=1`,
   `{A}`..`{H}` = `index_letter`, `{pan}` = the active slice's `pan` handle (for `display pan set {pan} band=20`, which the radio completes from band persistence; transverter bands are `band=x<index>` from `sub xvtr all`; no band exists for general coverage, `band=gen` is refused).
