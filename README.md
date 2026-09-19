@@ -55,7 +55,8 @@ profile, and so on.
   averaging, frame rate). *All slices* takes every open slice the same
   way, plus which one transmits and which is active, behind a `slices A B` line that opens or
   closes slices until exactly those exist. Nothing is stored in the radio: the button is the whole
-  snapshot, and you can read and edit every line of it.
+  snapshot, and you can read and edit every line of it. Right-click → Update from the radio… takes
+  a preset again in place, keeping its name, colour, hotkey and slice.
 - **Runs on**: every button runs on slice A unless you say otherwise, so your memories still land on
   A after you open a second receiver and B becomes active, and pressing one makes A the active slice
   again so the front panel and the knob follow. Right-click → Runs on picks another slice, or

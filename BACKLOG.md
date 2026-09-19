@@ -137,3 +137,6 @@
   fresh connection; with two connections, the OTHER one receives the push. So the radio never echoes
   a client's own changes. Fix: StatusEcho applied in RadioClient.Send. Capture additions: audio_level,
   audio_pan, audio_mute per slice; pan min_dbm, max_dbm, average, fps.
+- 2026-09-19: 0.15.0-beta. David: "another nice feature would be an update preset option in the right
+  click menu". Right-click -> Update from the radio: SliceCapture.ShapeOf reads the button back (all
+  slices / single, basic / full), the same capture is taken again, a confirm shows where it will tune.

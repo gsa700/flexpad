@@ -58,6 +58,7 @@ public partial class App : Application
             _mainVm = new MainWindowViewModel(_radio, () => _config);
             _mainVm.EditRequested += (b, isNew) => Fire(() => EditButtonAsync(b, isNew), "button editor");
             _mainVm.Changed += () => { SaveConfig(); RebuildButtons(); };
+            _mainVm.UpdateRequested += b => Fire(() => UpdatePresetAsync(b), "update preset");
             _setupVm = new SetupViewModel(_config, () => _config.Buttons.Select(b => b.Label));
             _setupVm.ReloadRequested += ReloadConfig;
 
@@ -172,6 +173,45 @@ public partial class App : Application
     }
 
     /// <summary>The band-set generator: a dialog, then a batch of ordinary buttons.</summary>
+    /// <summary>
+    /// "Update from the radio": take the same kind of capture the button already is (single slice
+    /// or all slices, basic or full) and replace its commands. Name, colour, hotkey, row and slice stay.
+    /// </summary>
+    private async Task UpdatePresetAsync(ButtonConfig button)
+    {
+        var shape = SliceCapture.ShapeOf(button.Commands);
+        if (!shape.Updatable) return;
+        var transmit = _radio.Client.Transmit.ToDictionary(kv => kv.Key, kv => kv.Value);
+        List<string> lines;
+        try
+        {
+            lines = shape.AllSlices
+                ? SliceCapture.CaptureAll(_radio.Client.Slices, transmit, shape.Full, now: null, pans: _radio.Client.PanSnapshot()).Lines
+                : SliceCapture.Capture(_radio.Client.Slices, transmit, shape.Full, now: null, pans: _radio.Client.PanSnapshot(),
+                    letter: button.TargetLetter).Lines;
+        }
+        catch (SequenceException ex)
+        {
+            await NotifyAsync("Update from the radio", $"Could not capture: {ex.Message}.");
+            return;
+        }
+
+        var what = shape.AllSlices
+            ? $"every open slice ({_radio.Client.Slices.Live().Count} now), {(shape.Full ? "full" : "basic")}"
+            : $"{(button.TargetLetter is { } l ? "slice " + l : "the active slice")}, {(shape.Full ? "full" : "basic")}";
+        var tunes = string.Join("   ", lines.Where(l => l.StartsWith("slice tune", StringComparison.Ordinal)));
+        if (!await ConfirmAsync("Update from the radio",
+                $"Replace the commands of \u201c{button.Label}\u201d with the radio as it is now?",
+                affirmative: "Update", negative: "Cancel",
+                detail: $"Captures {what}.\n{tunes}\nThe name, colour, hotkey, row and slice stay. Lines you added by hand are replaced."))
+            return;
+
+        button.Commands = lines;
+        SaveConfig();
+        RebuildButtons();
+        _radio.Note($"{button.Label}: updated from the radio ({lines.Count} lines)");
+    }
+
     public async Task MakeBandSetAsync()
     {
         if (_main is null) return;

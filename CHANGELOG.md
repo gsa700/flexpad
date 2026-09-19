@@ -5,6 +5,16 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.15.0-beta] - 2026-09-19
+
+### Added
+- **Right-click → Update from the radio…** takes a preset again, in place: the same kind of capture
+  the button already is (one slice or all of them, basic or full), from the radio as it is now. The
+  name, colour, hotkey, row and slice stay; the commands are replaced after a confirmation that
+  shows where the new preset will tune. A single-slice preset re-reads the slice it runs on, not
+  whichever slice is active. Only offered for buttons that are presets, so not for band changes or
+  actions. (David, 2026-09-19.)
+
 ## [0.14.1-beta] - 2026-09-19
 
 ### Fixed

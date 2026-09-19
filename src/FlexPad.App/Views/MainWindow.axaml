@@ -62,7 +62,9 @@
               <Button.ContextMenu>
                 <ContextMenu>
                   <MenuItem Header="Edit…" Command="{Binding EditCommand}"/>
-                  <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}"/>
+                  <MenuItem Header="Update from the radio…" Command="{Binding UpdateCommand}" IsVisible="{Binding CanUpdate}"
+                          ToolTip.Tip="Capture this preset again from the radio as it is now; name, colour, hotkey and slice stay"/>
+                <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}"/>
                   <MenuItem Header="Runs on" ItemsSource="{Binding RunsOn}">
                     <MenuItem.ItemContainerTheme>
                       <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:RunsOnChoice">
@@ -109,6 +111,8 @@
             <Button.ContextMenu>
               <ContextMenu>
                 <MenuItem Header="Edit…" Command="{Binding EditCommand}"/>
+                <MenuItem Header="Update from the radio…" Command="{Binding UpdateCommand}" IsVisible="{Binding CanUpdate}"
+                          ToolTip.Tip="Capture this preset again from the radio as it is now; name, colour, hotkey and slice stay"/>
                 <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}"/>
                 <MenuItem Header="Runs on" ItemsSource="{Binding RunsOn}">
                   <MenuItem.ItemContainerTheme>

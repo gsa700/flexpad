@@ -109,6 +109,11 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         Changed?.Invoke();
     }
 
+    /// <summary>Raised by "Update from the radio": the App confirms, captures again and saves.</summary>
+    public event Action<ButtonConfig>? UpdateRequested;
+
+    public void UpdateFromRadio(ButtonConfig b) => UpdateRequested?.Invoke(b);
+
     /// <summary>Pin a button to a slice letter, or null for "whichever slice is active".</summary>
     public void SetSlice(ButtonConfig b, string? letter)
     {
@@ -219,6 +224,7 @@ public sealed class ButtonViewModel : ViewModelBase
         MoveEarlierCommand = new RelayCommand(() => owner.Move(config, -1));
         MoveLaterCommand = new RelayCommand(() => owner.Move(config, +1));
         DeleteCommand = new RelayCommand(() => owner.Delete(config));
+        UpdateCommand = new RelayCommand(() => owner.UpdateFromRadio(config));
         RunsOn = ButtonActions.SliceLetters.Cast<string?>().Append(null)
             .Select(l => new RunsOnChoice(
                 (config.TargetLetter == l ? "✓  " : "     ") + (l is null ? "Whichever slice is active" : l == ButtonConfig.DefaultLetter ? "Slice A (default)" : $"Slice {l}"),
@@ -232,6 +238,10 @@ public sealed class ButtonViewModel : ViewModelBase
     public string TargetBadge => Config.TargetLetter ?? "act";
     public bool HasTarget => Config.TargetLetter != ButtonConfig.DefaultLetter && Config.Commands.Any(CommandSequence.UsesOwnSlice);
     public List<RunsOnChoice> RunsOn { get; }
+
+    /// <summary>Take this preset again from the radio, in place. Only offered for buttons that are presets.</summary>
+    public RelayCommand UpdateCommand { get; }
+    public bool CanUpdate => SliceCapture.ShapeOf(Config.Commands).Updatable;
 
     public ButtonConfig Config { get; }
     public string Label => Config.Label;

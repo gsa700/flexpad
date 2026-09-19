@@ -148,4 +148,30 @@ public class CaptureAllTests
         }, lines.Skip(lines.Count - 6));
         Assert.DoesNotContain(SliceCapture.CaptureAll(t, new Dictionary<string, string>(), full: false, When, pans).Lines, l => l.Contains("audio_level"));
     }
+
+    [Fact]
+    public void ShapeOf_reads_a_button_back_so_it_can_be_captured_again()
+    {
+        var none = new Dictionary<string, string>();
+        Assert.Equal(new SliceCapture.Shape(true, true, false), SliceCapture.ShapeOf(SliceCapture.CaptureAll(TwoSlices(), none, false, When).Lines));
+        Assert.Equal(new SliceCapture.Shape(true, true, true), SliceCapture.ShapeOf(SliceCapture.CaptureAll(TwoSlices(), none, true, When).Lines));
+        Assert.Equal(new SliceCapture.Shape(true, false, false), SliceCapture.ShapeOf(SliceCapture.Capture(TwoSlices(), none, false, When).Lines));
+        Assert.Equal(new SliceCapture.Shape(true, false, true), SliceCapture.ShapeOf(SliceCapture.Capture(TwoSlices(), none, true, When).Lines));
+        // a hand-built frequency button counts; a band change, an action or a comment does not
+        Assert.True(SliceCapture.ShapeOf(new[] { "slice tune {slice} 14.250", "slice set {slice} mode=USB" }).Updatable);
+        Assert.False(SliceCapture.ShapeOf(new[] { "display pan set {pan} band=20" }).Updatable);
+        Assert.False(SliceCapture.ShapeOf(new[] { "slice set {B} tx=1" }).Updatable);
+        Assert.False(SliceCapture.ShapeOf(new[] { "# slice tune {slice} 7.1" }).Updatable);
+    }
+
+    [Fact]
+    public void A_single_slice_update_reads_the_buttons_own_slice_not_the_active_one()
+    {
+        var t = TwoSlices();   // B is active, A is on 3.925 LSB
+        var (label, lines) = SliceCapture.Capture(t, new Dictionary<string, string>(), full: false, When, pans: null, letter: "A");
+        Assert.Equal("3.925 LSB", label);
+        Assert.Contains("slice tune {slice} 3.925000", lines);
+        Assert.Contains("not open", Assert.Throws<SequenceException>(() =>
+            SliceCapture.Capture(t, new Dictionary<string, string>(), false, When, null, letter: "D")).Message);
+    }
 }

@@ -16,11 +16,15 @@ public static class SliceCapture
     /// <param name="pans">Panadapters by handle, from the radio client; null or a missing handle just
     /// leaves the scope lines out.</param>
     /// <returns>A suggested button label and the lines.</returns>
+    /// <param name="letter">Capture this slice instead of the active one: what "update this preset" uses,
+    /// so a button that runs on A re-reads A even while B is active.</param>
     public static (string Label, List<string> Lines) Capture(SliceTable slices,
         IReadOnlyDictionary<string, string> transmit, bool full, DateTime? now = null,
-        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? pans = null)
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? pans = null, string? letter = null)
     {
-        var idx = slices.Active() ?? throw new SequenceException("no active slice to capture");
+        var idx = letter is null
+            ? slices.Active() ?? throw new SequenceException("no active slice to capture")
+            : slices.ByLetter(letter) ?? throw new SequenceException($"slice {letter} is not open, so there is nothing to capture");
         var s = slices.Get(idx)!;
         var stamp = (now ?? DateTime.Now).ToString("yyyy-MM-dd HH:mm");
         var lines = new List<string> { $"# captured from slice {s.GetValueOrDefault("index_letter", "?")} on {stamp}" };
@@ -76,6 +80,28 @@ public static class SliceCapture
         var label = LabelOf(active ?? live[0]);
         if (live.Count > 1) label += $" +{live.Count - 1}";
         return (label, lines);
+    }
+
+    /// <summary>What kind of capture a button's lines look like, so it can be taken again in place.</summary>
+    /// <param name="Updatable">False for a button that is not a preset at all (a band change, "TX -> B", hand-written commands).</param>
+    public readonly record struct Shape(bool Updatable, bool AllSlices, bool Full);
+
+    /// <summary>
+    /// Read a button back: a <c>slices</c> line means an all-slices capture, a <c>slice tune</c> on its own
+    /// slice means a single-slice preset, and AGC or step lines mean it was a Full one. Comments don't count.
+    /// </summary>
+    public static Shape ShapeOf(IEnumerable<string> lines)
+    {
+        bool all = false, tune = false, full = false;
+        foreach (var raw in lines)
+        {
+            var line = raw.Trim();
+            if (line.Length == 0 || line.StartsWith('#')) continue;
+            if (line.StartsWith("slices ", StringComparison.OrdinalIgnoreCase)) all = true;
+            if (line.StartsWith("slice tune {slice}", StringComparison.OrdinalIgnoreCase)) tune = true;
+            if (line.Contains("agc_mode=") || line.Contains(" step=")) full = true;
+        }
+        return new Shape(all || tune, all, full);
     }
 
     private static IEnumerable<string> SliceLines(IReadOnlyDictionary<string, string> s, string who, bool full)
