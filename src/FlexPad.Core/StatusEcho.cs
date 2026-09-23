@@ -17,6 +17,14 @@ namespace FlexPad.Core;
 /// capture wrote the stale AGC-T into the new preset (David: "didn't preserve the slice B volume or
 /// AGC-T settings"). When the radio accepts one of these commands we therefore apply it to our own
 /// tables, as the status line the radio would have sent anyone else.
+/// <para>
+/// <c>slice tune</c> too, since 0.15.1. The radio normally does report a tune back to the client
+/// that sent it, but on 2026-09-23 a session FlexPad had opened while the radio booted got no such
+/// report: a button tuned the radio to 3.925 while the status line stayed on 20 m, and the next knob
+/// tick, built on the stale frequency, sent the radio back there. Writing the accepted tune into our
+/// own table (the frequency in the radio's own six-decimal form) costs nothing when the report does
+/// come and keeps the display and the knob right when it does not.
+/// </para>
 /// </remarks>
 public static partial class StatusEcho
 {
@@ -31,6 +39,9 @@ public static partial class StatusEcho
 
     [GeneratedRegex(@"^filt\s+(\d+)\s+(-?\d+)\s+(-?\d+)\s*$", RegexOptions.IgnoreCase)]
     private static partial Regex Filt();
+
+    [GeneratedRegex(@"^slice\s+t(?:une)?\s+(\d+)\s+(\S+)\s*$", RegexOptions.IgnoreCase)]
+    private static partial Regex Tune();
 
     // The radio does report these itself, and they move other slices too (one active, one TX):
     // leave them to the real status lines. `band` makes the radio retune from its own memory.
@@ -49,6 +60,8 @@ public static partial class StatusEcho
         if (TransmitSet().Match(cmd) is { Success: true } t) return Body("transmit", t.Groups[1].Value);
         if (Filt().Match(cmd) is { Success: true } f)
             return $"slice {f.Groups[1].Value} filter_lo={f.Groups[2].Value} filter_hi={f.Groups[3].Value}";
+        if (Tune().Match(cmd) is { Success: true } tu && FlexProtocol.ParseMhz(tu.Groups[2].Value) is { } hz)
+            return $"slice {tu.Groups[1].Value} RF_frequency={FlexProtocol.FormatMhz(hz)}";
         return null;
     }
 

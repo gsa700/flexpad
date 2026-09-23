@@ -189,7 +189,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             ConnBrush = Palette.RedBrush;
             ConnTip = $"Not connected to {(string.IsNullOrEmpty(c.Host) ? "the radio" : c.Host)}" +
                       (c.Error is { } e ? $": {e}" : "");
-            StatusText = $"not connected  {c.Error ?? ""}".TrimEnd();
+            StatusText = "No radio connected";   // the reason lives in the dot's tooltip (David, 2026-09-23)
             return;
         }
         ConnBrush = Palette.GreenBrush;

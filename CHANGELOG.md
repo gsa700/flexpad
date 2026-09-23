@@ -5,6 +5,22 @@ name; this is the Windows/Linux/Raspberry-Pi rewrite in the station-tools family
 
 ## [Unreleased]
 
+## [0.15.1-beta] - 2026-09-23
+
+### Fixed
+- **A knob tick could throw the radio back to the frequency a button had just left.** FlexPad's
+  picture of the frequency came only from the radio's status reports, and on a connection opened
+  while the radio was booting no report followed a button's `slice tune`: the radio went to 3.925,
+  the status line stayed on 20 m, and the first turn of the FlexControl, built on the stale
+  frequency, sent the radio back to 20 m (David, 2026-09-23). An accepted `slice tune` is now
+  applied to FlexPad's own picture at once, the way `slice set` has been since 0.14.1 and the knob's
+  own tunes always were, so the display and the knob no longer depend on the radio repeating a
+  change FlexPad itself made.
+
+### Changed
+- While the radio is not connected the status line just says **No radio connected**; the reason
+  (refused, timed out, no radio found) is in the red dot's tooltip.
+
 ## [0.15.0-beta] - 2026-09-19
 
 ### Added
