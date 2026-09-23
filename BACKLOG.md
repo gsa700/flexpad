@@ -141,12 +141,22 @@
   click menu". Right-click -> Update from the radio: SliceCapture.ShapeOf reads the button back (all
   slices / single, basic / full), the same capture is taken again, a confirm shows where it will tune.
 
-## Where we left off (2026-09-19)
+## Where we left off (2026-09-23)
 
-David: "let's let that soak for a while and we'll pick it up another time." Released and on both
-his machines through the updater: 0.15.0-beta. Waiting on his use, not on any work:
+0.15.1-beta released 2026-09-23 after David reported "a weird one": app connected while the radio
+booted, a preset tuned the radio to 3.925, the status line stayed on 20 m, and the first FlexControl
+tick sent the radio back to 20 m (the knob tunes from the app's slice table; the table was stale
+because no `RF_frequency` status followed the app's own `slice tune` on that session). Fix: StatusEcho
+now applies an accepted `slice tune` to the table. Also his ask: the disconnected status line is just
+"No radio connected". Not yet installed or confirmed by him. Open question he could answer from the
+console window if the app was not restarted: was there an `S…|slice 0 … RF_frequency=3.925000` line
+after the PICONET button's lines? If not, the radio really did not report the tune to its sender on
+that boot-time session. Worth a probe at his next radio power-up: connect during boot, tune from that
+connection, see whether the report comes.
 
-- **Unconfirmed by David:** 0.14.1 (captures no longer stale; volume, average, dB range captured)
+Before that, 0.15.0-beta was on both his machines. Waiting on his use, not on any work:
+
+- **Unconfirmed by David:** 0.15.1 (above), 0.14.1 (captures no longer stale; volume, average, dB range captured)
   and 0.15.0 (right-click, Update from the radio). The natural test of both is one action: set up
   both receivers, right-click "VHF & UHF", Update from the radio, then press it from single-slice.
 - **Never sent to his radio by me, only by his buttons:** nothing outstanding. The scope lines
